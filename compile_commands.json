@@ -1,0 +1,21 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++-14",
+      "-c",
+      "-Iinclude",
+      "-std=c++23",
+      "-Wall",
+      "-Weffc++",
+      "-Wextra",
+      "-Wconversion",
+      "-Wsign-conversion",
+      "-o",
+      "chess-2.0",
+      "main.cpp"
+    ],
+    "directory": "/home/asbjornb/Desktop/Projekter/Chess-2.0",
+    "file": "/home/asbjornb/Desktop/Projekter/Chess-2.0/main.cpp",
+    "output": "/home/asbjornb/Desktop/Projekter/Chess-2.0/chess-2.0"
+  }
+]
