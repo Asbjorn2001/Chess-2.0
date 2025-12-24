@@ -7,7 +7,7 @@ SRCDIR = src
 OBJDIR = obj
 
 # Source and object files
-SOURCES = main.cpp $(wildcard $(SRCDIR)/*.cpp)
+SOURCES = $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SOURCES))
 
 # Output binary
@@ -18,7 +18,7 @@ all: $(BIN)
 
 # Link objects into binary
 $(BIN): $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $@ $(CXXFLAGS)
+	$(CXX) main.cpp $(OBJECTS) -o $@ $(CXXFLAGS)
 
 # Compile source files into object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)

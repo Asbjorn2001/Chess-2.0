@@ -12,6 +12,8 @@
 constexpr std::array<char, 8> files { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
 constexpr std::array<char, 8> ranks { '1', '2', '3', '4', '5', '6', '7', '8' };
 
+struct ChessMove;
+
 struct CastleRights {
     bool w_k_side;
     bool w_q_side;

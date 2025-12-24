@@ -38,8 +38,7 @@ ChessBoard::ChessBoard(const std::string& fen_string) {
             throw std::logic_error(std::format("Expected 8 ranks, but got {}", ranks.size()));
         }
         for (auto it = ranks.rbegin(); it != ranks.rend(); ++it) {
-            const auto& row = *it;
-            for (const auto& c : row) {
+            for (const auto& c : *it) {
                 if (c >= '1' && c <= '8') {
                     size_t stop_index = index + static_cast<size_t>(c - '0');
                     while (index < stop_index) {
@@ -150,8 +149,17 @@ std::vector<std::pair<ChessSquare, SquareOccupant>> ChessBoard::get_pieces(Chess
 }
 
 void ChessBoard::move(ChessMove move) {
-    this->m_position[move.target_square.index()] = this->m_position[move.start_square.index()];
-    this->m_position[move.start_square.index()] = ' ';
+    if (move.capture.has_value()) {
+        m_position[move.capture->first] = ' ';
+    }
+    m_position[move.target_square] = m_position[move.start_square];
+    m_position[move.start_square] = ' ';
+
+    m_active_color = m_active_color == ChessColor::White ? 
+        ChessColor::Black : ChessColor::White;
+
+    m_en_passant_target = move.en_passant_target;
+    m_history.push_back(as_fen_string());
 }
 
 std::ostream& operator<<(std::ostream& os, const ChessBoard& board) {

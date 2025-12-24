@@ -1,12 +1,14 @@
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 #include <ostream>
 #include <stdexcept>
+#include <utility>
 
 class ChessSquare {
 public:
-    constexpr ChessSquare(size_t index) : m_index(index) {
+    constexpr ChessSquare(size_t index = 0) : m_index(index) {
         if (index > 63) {
             throw std::out_of_range("Index initialized chess square must be 0-63");
         }
@@ -36,10 +38,13 @@ public:
     constexpr size_t row() const { return m_index / 8; }
     constexpr size_t col() const { return m_index % 8; }
     constexpr size_t index() const { return m_index; }
+    constexpr size_t offset_with(int offset) const { 
+        return static_cast<size_t>(static_cast<int>(m_index) + offset); 
+    }
 
     constexpr operator size_t() const { return m_index; }
 
-    constexpr char rank() const { return '8' - static_cast<char>(row()); }
+    constexpr char rank() const { return static_cast<char>(row()) + '1'; }
     constexpr char file() const { return static_cast<char>(col()) + 'a'; }
 
     friend std::ostream& operator<<(std::ostream& os, const ChessSquare& square) {
@@ -48,17 +53,6 @@ public:
 
 private:
     size_t m_index;
-};
-
-struct ChessMove {
-    ChessSquare start_square;
-    ChessSquare target_square;
-    bool is_capture = false;
-    bool is_promotion = false;
-
-    friend std::ostream& operator<<(std::ostream& os, const ChessMove& move) {
-        return os << move.target_square << "<-" << move.start_square;
-    }
 };
 
 enum class ChessColor {
@@ -122,4 +116,17 @@ public:
 
 private:
     char m_value;
+};
+
+struct ChessMove {
+    ChessSquare start_square;
+    ChessSquare target_square;
+    std::optional<std::pair<ChessSquare, SquareOccupant>> capture = std::nullopt;
+    std::optional<SquareOccupant> promotion = std::nullopt;
+    std::optional<ChessSquare> en_passant_target = std::nullopt;
+    bool is_check = false;
+    
+    friend std::ostream& operator<<(std::ostream& os, const ChessMove& move) {
+        return os << move.start_square << "->" << move.target_square;
+    }
 };
