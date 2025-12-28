@@ -141,7 +141,10 @@ class ChessBoard {
     const SquareOccupant& operator[](ChessSquare square) const;
     friend std::ostream& operator<<(std::ostream& os, const ChessBoard& board);
 
-    void move(ChessMove move);
+    void make_move(const ChessMove& move);
+    void unmake_move(const ChessMove& move);
+    void move_and_save(const ChessMove& move);
+    ChessBoard copy_and_move(const ChessMove& move) const;
     ChessColor active_color() const { return m_active_color; }
     ChessColor passive_color() const {
         return m_active_color == ChessColor::White ? ChessColor::Black

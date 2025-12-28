@@ -159,9 +159,9 @@ struct ChessMove {
     ChessSquare start_square;
     ChessSquare target_square;
     std::optional<SqOccPair> capture = std::nullopt;
+    std::optional<CastleMove> castle_move = std::nullopt;
     std::optional<SquareOccupant> promotion = std::nullopt;
     std::optional<ChessSquare> en_passant_target = std::nullopt;
-    std::optional<CastleMove> castle_move = std::nullopt;
 
     friend std::ostream& operator<<(std::ostream& os, const ChessMove& move) {
         return os << move.start_square << "->" << move.target_square;

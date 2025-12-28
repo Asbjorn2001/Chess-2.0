@@ -33,39 +33,39 @@ class MoveGenerator {
    public:
     MoveGenerator() = default;
 
-    PositionData generate_position_data(const ChessBoard& board);
+    PositionData generate_position_data(const ChessBoard& board) const;
 
-    MoveMap generate_pseudo_legal_moves(const ChessBoard& board);
+    MoveMap generate_pseudo_legal_moves(const ChessBoard& board) const;
 
    private:
     MoveEvalData generate_evaluation_data(
         const ChessBoard& board,
-        std::vector<SqOccPair> hostile_occupants);
+        std::vector<SqOccPair> hostile_occupants) const;
 
     std::vector<ChessMove> generate_sliding_moves(const ChessBoard& board,
-                                                  SqOccPair piece);
+                                                  SqOccPair piece) const;
     std::vector<ChessMove> generate_pawn_moves(const ChessBoard& board,
-                                               SqOccPair pawn);
+                                               SqOccPair pawn) const;
     std::vector<ChessMove> generate_knight_moves(const ChessBoard& board,
-                                                 SqOccPair knight);
+                                                 SqOccPair knight) const;
     std::vector<ChessMove> generate_king_moves(const ChessBoard& board,
-                                               SqOccPair king);
+                                               SqOccPair king) const;
 
     void generate_sliding_evaluation_data(const ChessBoard& board,
                                           MoveEvalData& data,
-                                          SqOccPair sliding_piece);
+                                          SqOccPair sliding_piece) const;
 
     void generate_pawn_evaluation_data(const ChessBoard& board,
                                        MoveEvalData& data,
-                                       SqOccPair pawn);
+                                       SqOccPair pawn) const;
 
     void generate_knight_evaluation_data(const ChessBoard& board,
                                          MoveEvalData& data,
-                                         SqOccPair knight);
+                                         SqOccPair knight) const;
 
     void generate_king_evaluation_data(const ChessBoard& board,
                                        MoveEvalData& data,
-                                       SqOccPair king);
+                                       SqOccPair king) const;
 
     bool is_check(const ChessBoard& board,
                   ChessSquare square,

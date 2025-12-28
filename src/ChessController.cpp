@@ -66,7 +66,7 @@ bool ChessController::try_move(ChessSquare start_square,
 
 void ChessController::make_move(const ChessMove& move) {
     auto& board = m_model.board;
-    board.move(move);
+    board.move_and_save(move);
     m_model.position_data = m_move_generator.generate_position_data(board);
     if (m_model.position_data.legal_moves.empty()) {
     }

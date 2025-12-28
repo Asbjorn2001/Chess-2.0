@@ -132,7 +132,7 @@ std::vector<SqOccPair> ChessBoard::get_pieces(ChessColor piece_color) const {
     return pieces;
 }
 
-void ChessBoard::move(ChessMove move) {
+void ChessBoard::make_move(const ChessMove& move) {
     if (move.capture.has_value()) {
         m_position[move.capture->square] = ' ';
     }
@@ -141,10 +141,14 @@ void ChessBoard::move(ChessMove move) {
     m_position[move.start_square] = ' ';
 
     if (move.castle_move.has_value()) {
-        const auto castle_move = move.castle_move.value();
+        const auto& castle_move{move.castle_move.value()};
         m_position[castle_move.rook_target] =
             m_position[castle_move.rook_start];
         m_position[castle_move.rook_start] = ' ';
+    }
+
+    if (move.promotion.has_value()) {
+        m_position[move.target_square] = move.promotion.value();
     }
 
     m_castle_rights.try_remove(move.start_square);
@@ -152,8 +156,38 @@ void ChessBoard::move(ChessMove move) {
 
     m_active_color = passive_color();
     m_en_passant_target = move.en_passant_target;
+}
 
+void ChessBoard::unmake_move(const ChessMove& move) {
+    m_position[move.start_square] = m_position[move.target_square];
+    m_position[move.target_square] = ' ';
+
+    if (move.capture.has_value()) {
+        m_position[move.capture->square] = move.capture->occ;
+    }
+
+    if (move.castle_move.has_value()) {
+        const auto& castle_move{move.castle_move.value()};
+        m_position[castle_move.rook_start] =
+            m_position[castle_move.rook_target];
+        m_position[castle_move.king_target] = ' ';
+    }
+
+    if (move.promotion.has_value()) {
+        m_position[move.start_square] =
+            m_active_color == ChessColor::White ? 'P' : 'p';
+    }
+}
+
+void ChessBoard::move_and_save(const ChessMove& move) {
+    make_move(move);
     m_history.push_back(as_fen());
+}
+
+ChessBoard ChessBoard::copy_and_move(const ChessMove& move) const {
+    ChessBoard copy{*this};
+    copy.make_move(move);
+    return copy;
 }
 
 std::ostream& operator<<(std::ostream& os, const ChessBoard& board) {

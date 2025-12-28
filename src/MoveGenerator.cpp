@@ -169,18 +169,8 @@ std::vector<ChessMove> filter_moves(
         if (piece.occ.type() == OccupantType::King) {
             bool can_add{data.hostile_control_map[move.target_square] == 0};
 
-            if (can_add) {
-                can_add = !std::any_of(
-                    data.hostile_checks.begin(), data.hostile_checks.end(),
-                    [&](CheckData check) {
-                        return check.checking_piece.occ.is_sliding_piece() &&
-                               sliding_piece_intersects_square(
-                                   check.checking_piece, move.target_square);
-                    });
-            }
-
             if (can_add && move.castle_move.has_value()) {
-                const auto castle_move = move.castle_move.value();
+                const auto castle_move{move.castle_move.value()};
                 if (!data.hostile_checks.empty() ||
                     data.hostile_control_map[castle_move.king_target] > 0 ||
                     data.hostile_control_map[castle_move.rook_target] > 0) {
@@ -194,25 +184,24 @@ std::vector<ChessMove> filter_moves(
             continue;
         }
 
-        bool can_add = true;
+        bool can_add{true};
         if (!data.hostile_checks.empty()) {
-            can_add = false;
-            for (const auto& resolve_sq :
-                 data.hostile_checks.front().resolve_squares) {
-                if (resolve_sq == move.target_square) {
-                    can_add = true;
-                }
-            }
+            const auto& check{data.hostile_checks.front()};
+            can_add = std::any_of(check.resolve_squares.begin(),
+                                  check.resolve_squares.end(),
+                                  [&](ChessSquare resolve_sq) {
+                                      return move.target_square == resolve_sq;
+                                  });
         }
 
         if (can_add && data.hostile_pins.contains(piece)) {
-            can_add = false;
-            for (const auto& pin_sq : data.hostile_pins.at(piece)) {
-                if (move.target_square == pin_sq) {
-                    can_add = true;
-                }
-            }
+            const auto& pin = data.hostile_pins.at(piece);
+            can_add =
+                std::any_of(pin.begin(), pin.end(), [&](ChessSquare pin_sq) {
+                    return move.target_square == pin_sq;
+                });
         }
+
         if (can_add) {
             filtered_moves.push_back(move);
         }
@@ -221,7 +210,8 @@ std::vector<ChessMove> filter_moves(
     return filtered_moves;
 }
 
-PositionData MoveGenerator::generate_position_data(const ChessBoard& board) {
+PositionData MoveGenerator::generate_position_data(
+    const ChessBoard& board) const {
     MoveMap legal_moves{};
 
     std::vector<SqOccPair> active_pieces{
@@ -265,7 +255,8 @@ PositionData MoveGenerator::generate_position_data(const ChessBoard& board) {
     return {legal_moves, data};
 }
 
-MoveMap MoveGenerator::generate_pseudo_legal_moves(const ChessBoard& board) {
+MoveMap MoveGenerator::generate_pseudo_legal_moves(
+    const ChessBoard& board) const {
     const auto active_pieces = board.get_pieces(board.active_color());
     MoveMap moves{};
 
@@ -298,7 +289,7 @@ MoveMap MoveGenerator::generate_pseudo_legal_moves(const ChessBoard& board) {
 
 std::vector<ChessMove> MoveGenerator::generate_sliding_moves(
     const ChessBoard& board,
-    SqOccPair piece) {
+    SqOccPair piece) const {
     const ChessColor friendly_color = piece.occ.piece_color();
     std::vector<ChessMove> moves{};
 
@@ -323,9 +314,31 @@ std::vector<ChessMove> MoveGenerator::generate_sliding_moves(
     return moves;
 }
 
+constexpr std::array<SquareOccupant, 4> white_promo_pieces{'N', 'B', 'R', 'Q'};
+constexpr std::array<SquareOccupant, 4> black_promo_pieces{'n', 'b', 'r', 'q'};
+
+std::vector<ChessMove> generate_promotion_moves(
+    const std::vector<ChessMove>& moves,
+    ChessColor pawn_color) {
+    const auto& promo_pieces{pawn_color == ChessColor::White
+                                 ? white_promo_pieces
+                                 : black_promo_pieces};
+
+    std::vector<ChessMove> promo_moves{};
+    for (const auto& parent_move : moves) {
+        for (const auto& promo : promo_pieces) {
+            auto move = parent_move;
+            move.promotion = promo;
+            promo_moves.push_back(move);
+        }
+    }
+
+    return promo_moves;
+}
+
 std::vector<ChessMove> MoveGenerator::generate_pawn_moves(
     const ChessBoard& board,
-    SqOccPair pawn) {
+    SqOccPair pawn) const {
     std::vector<ChessMove> moves{};
     ChessColor pawn_color = pawn.occ.piece_color();
     ChessSquare start_square = pawn.square;
@@ -376,12 +389,20 @@ std::vector<ChessMove> MoveGenerator::generate_pawn_moves(
         }
     }
 
+    const bool will_promote{
+        (pawn_color == ChessColor::White && start_square.row() == 6) ||
+        (pawn_color == ChessColor::Black && start_square.row() == 1)};
+
+    if (will_promote) {
+        return generate_promotion_moves(moves, pawn_color);
+    }
+
     return moves;
 }
 
 std::vector<ChessMove> MoveGenerator::generate_knight_moves(
     const ChessBoard& board,
-    SqOccPair knight) {
+    SqOccPair knight) const {
     std::vector<ChessMove> moves{};
     for (const auto sq : knight_control_squares(knight.square)) {
         const SquareOccupant occ{board[sq]};
@@ -403,7 +424,7 @@ std::vector<ChessMove> MoveGenerator::generate_knight_moves(
 
 std::vector<ChessMove> MoveGenerator::generate_king_moves(
     const ChessBoard& board,
-    SqOccPair king) {
+    SqOccPair king) const {
     std::vector<ChessMove> moves{};
     for (const ChessSquare sq : king_control_squares(king.square)) {
         const SquareOccupant occ{board[sq]};
@@ -453,7 +474,7 @@ std::vector<ChessMove> MoveGenerator::generate_king_moves(
 
 MoveEvalData MoveGenerator::generate_evaluation_data(
     const ChessBoard& board,
-    std::vector<SqOccPair> hostile_pieces) {
+    std::vector<SqOccPair> hostile_pieces) const {
     MoveEvalData data{board.passive_color()};
 
     for (const auto& piece : hostile_pieces) {
@@ -482,12 +503,13 @@ MoveEvalData MoveGenerator::generate_evaluation_data(
 
 void MoveGenerator::generate_sliding_evaluation_data(const ChessBoard& board,
                                                      MoveEvalData& data,
-                                                     SqOccPair piece) {
+                                                     SqOccPair piece) const {
     for (const auto& ray : sliding_piece_rays(piece.square, piece.occ.type())) {
         std::vector<ChessSquare> between{piece.square};
         std::optional<SqOccPair> first_piece{};
 
-        for (const auto sq : ray) {
+        for (auto it{ray.begin()}; it != ray.end(); ++it) {
+            const auto& sq = *it;
             const auto occ{board[sq]};
             between.push_back(sq);
 
@@ -508,6 +530,11 @@ void MoveGenerator::generate_sliding_evaluation_data(const ChessBoard& board,
                         // Direct check
                         data.hostile_checks.push_back(
                             CheckData{piece, between});
+
+                        // Add control square one square behind the king.
+                        if (++it != ray.end()) {
+                            ++data.hostile_control_map[*it];
+                        }
                         break;  // Pin not possible
                     }
                 } else {
@@ -532,7 +559,7 @@ void MoveGenerator::generate_sliding_evaluation_data(const ChessBoard& board,
 
 void MoveGenerator::generate_pawn_evaluation_data(const ChessBoard& board,
                                                   MoveEvalData& data,
-                                                  SqOccPair pawn) {
+                                                  SqOccPair pawn) const {
     for (const auto sq :
          pawn_control_squares(pawn.square, data.hostile_color)) {
         ++data.hostile_control_map[sq];
@@ -546,7 +573,7 @@ void MoveGenerator::generate_pawn_evaluation_data(const ChessBoard& board,
 
 void MoveGenerator::generate_knight_evaluation_data(const ChessBoard& board,
                                                     MoveEvalData& data,
-                                                    SqOccPair knight) {
+                                                    SqOccPair knight) const {
     for (const auto sq : knight_control_squares(knight.square)) {
         ++data.hostile_control_map[sq];
         const auto occ{board[sq]};
@@ -559,7 +586,7 @@ void MoveGenerator::generate_knight_evaluation_data(const ChessBoard& board,
 
 void MoveGenerator::generate_king_evaluation_data(const ChessBoard& board,
                                                   MoveEvalData& data,
-                                                  SqOccPair king) {
+                                                  SqOccPair king) const {
     for (const auto sq : king_control_squares(king.square)) {
         ++data.hostile_control_map[sq];
     }
