@@ -2,6 +2,8 @@
 CXX = g++-14
 CXXFLAGS = -Iinclude -std=c++23 -Wall -Weffc++ -Wextra -Wconversion -Wsign-conversion
 
+LIB = -lSDL2 -lSDL2_image
+
 # Directories
 SRCDIR = src
 OBJDIR = obj
@@ -17,8 +19,8 @@ BIN = chess-2.0
 all: $(BIN)
 
 # Link objects into binary
-$(BIN): $(OBJECTS)
-	$(CXX) main.cpp $(OBJECTS) -o $@ $(CXXFLAGS)
+$(BIN): main.cpp $(OBJECTS)
+	$(CXX) -o $@ $^ $(LIB) $(CXXFLAGS)
 
 # Compile source files into object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
