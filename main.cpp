@@ -9,9 +9,6 @@
 #include <cstdlib>
 #include <format>
 #include <iostream>
-#include <iterator>
-#include <memory>
-#include <optional>
 #include <ostream>
 #include <stdexcept>
 #include "src/ChessView.h"
@@ -54,9 +51,9 @@ int main(int argc, char* argv[]) {
         ChessController controller{model};
         ChessView view{renderer, model};
 
-        move_generation_test(5);
+        // move_generation_test(6);
 
-        // gui_game_loop(model, controller, view);
+        gui_game_loop(model, controller, view);
         // cli_game_loop(game, view);
     } catch (std::logic_error e) {
         std::cout << "Something went wrong: " << e.what() << "\n";

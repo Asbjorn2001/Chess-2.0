@@ -8,8 +8,6 @@
       "-Wall",
       "-Weffc++",
       "-Wextra",
-      "-Wconversion",
-      "-Wsign-conversion",
       "-o",
       "chess-2.0",
       "main.cpp"
