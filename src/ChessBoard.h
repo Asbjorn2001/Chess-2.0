@@ -30,11 +30,10 @@ constexpr ChessSquare w_queen_rook{'a', '1'};
 constexpr ChessSquare b_king_rook{'h', '8'};
 constexpr ChessSquare b_queen_rook{'a', '8'};
 
-constexpr std::array<CastleMove, 4> castle_moves{
-    {{w_king_rook, {'f', '1'}, {'g', '1'}},
-     {w_queen_rook, {'d', '1'}, {'c', '1'}},
-     {b_king_rook, {'f', '8'}, {'g', '8'}},
-     {b_queen_rook, {'d', '8'}, {'c', '8'}}}};
+constexpr std::array<CastleMove, 4> castle_moves{{{w_king_rook, {'f', '1'}, {'g', '1'}},
+                                                  {w_queen_rook, {'d', '1'}, {'c', '1'}},
+                                                  {b_king_rook, {'f', '8'}, {'g', '8'}},
+                                                  {b_queen_rook, {'d', '8'}, {'c', '8'}}}};
 
 struct CastleRights {
     uint8_t mask = 0;
@@ -46,26 +45,13 @@ struct CastleRights {
 
     constexpr bool try_remove(ChessSquare mutated_square) {
         switch (mutated_square) {
-            case w_king_rook:
-                remove(WhiteKingSide);
-                break;
-            case w_queen_rook:
-                remove(WhiteQueenSide);
-                break;
-            case b_king_rook:
-                remove(BlackKingSide);
-                break;
-            case b_queen_rook:
-                remove(BlackQueenSide);
-                break;
-            case w_king_square:
-                remove(WhiteKingSide | WhiteQueenSide);
-                break;
-            case b_king_square:
-                remove(BlackKingSide | BlackQueenSide);
-                break;
-            default:
-                return false;
+            case w_king_rook: remove(WhiteKingSide); break;
+            case w_queen_rook: remove(WhiteQueenSide); break;
+            case b_king_rook: remove(BlackKingSide); break;
+            case b_queen_rook: remove(BlackQueenSide); break;
+            case w_king_square: remove(WhiteKingSide | WhiteQueenSide); break;
+            case b_king_square: remove(BlackKingSide | BlackQueenSide); break;
+            default: return false;
         }
 
         return true;
@@ -75,14 +61,10 @@ struct CastleRights {
 
     constexpr CastleMove castle_move(CastleSide side) const {
         switch (side) {
-            case WhiteKingSide:
-                return castle_moves[0];
-            case WhiteQueenSide:
-                return castle_moves[1];
-            case BlackKingSide:
-                return castle_moves[2];
-            case BlackQueenSide:
-                return castle_moves[3];
+            case WhiteKingSide: return castle_moves[0];
+            case WhiteQueenSide: return castle_moves[1];
+            case BlackKingSide: return castle_moves[2];
+            case BlackQueenSide: return castle_moves[3];
         }
     }
 
@@ -90,18 +72,10 @@ struct CastleRights {
         CastleRights cr;
         for (char c : fen) {
             switch (c) {
-                case 'K':
-                    cr.add(WhiteKingSide);
-                    break;
-                case 'Q':
-                    cr.add(WhiteQueenSide);
-                    break;
-                case 'k':
-                    cr.add(BlackKingSide);
-                    break;
-                case 'q':
-                    cr.add(BlackQueenSide);
-                    break;
+                case 'K': cr.add(WhiteKingSide); break;
+                case 'Q': cr.add(WhiteQueenSide); break;
+                case 'k': cr.add(BlackKingSide); break;
+                case 'q': cr.add(BlackQueenSide); break;
             }
         }
         return cr;
@@ -126,8 +100,7 @@ struct CastleRights {
 /// FEN string: position, active color, castling rights, en passant targets
 /// (optional), halfmove clock, fullmove number ref:
 /// https://www.chess.com/terms/fen-chess
-constexpr auto fen_start_position =
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 0 1";
+constexpr auto fen_start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 class ChessBoard {
    public:
@@ -147,13 +120,10 @@ class ChessBoard {
     ChessBoard copy_and_move(const ChessMove& move) const;
     ChessColor active_color() const { return m_active_color; }
     ChessColor passive_color() const {
-        return m_active_color == ChessColor::White ? ChessColor::Black
-                                                   : ChessColor::White;
+        return m_active_color == ChessColor::White ? ChessColor::Black : ChessColor::White;
     }
     CastleRights castle_rights() const { return m_castle_rights; }
-    std::optional<ChessSquare> en_passant_target() const {
-        return m_en_passant_target;
-    }
+    std::optional<ChessSquare> en_passant_target() const { return m_en_passant_target; }
     const std::vector<std::string>& history() const { return m_history; }
 
     std::string as_fen() const;

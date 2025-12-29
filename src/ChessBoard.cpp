@@ -4,15 +4,13 @@
 ChessBoard::ChessBoard(const std::string& fen_string) {
     try {
         auto tokens = split_string(fen_string, " ");
-        if (tokens.size() < 5 || tokens.size() > 6) {
-            throw std::logic_error(std::format(
-                "Expected 5 or 6 arguments, but got {}", tokens.size()));
+        if (tokens.size() != 6) {
+            throw std::logic_error(std::format("Expected 6 arguments, but got {}", tokens.size()));
         }
         size_t index = 0;
         auto ranks = split_string(tokens.at(0), "/");
         if (ranks.size() != 8) {
-            throw std::logic_error(
-                std::format("Expected 8 ranks, but got {}", ranks.size()));
+            throw std::logic_error(std::format("Expected 8 ranks, but got {}", ranks.size()));
         }
         for (auto it = ranks.rbegin(); it != ranks.rend(); ++it) {
             for (const auto& c : *it) {
@@ -29,38 +27,32 @@ ChessBoard::ChessBoard(const std::string& fen_string) {
 
         auto c_color = tokens.at(1).at(0);
         if (c_color != 'w' && c_color != 'b') {
-            throw std::logic_error(std::format(
-                "Expected color \'w\' or \'b\', but got: \'{}\'", c_color));
+            throw std::logic_error(
+                std::format("Expected color \'w\' or \'b\', but got: \'{}\'", c_color));
         }
         m_active_color = c_color == 'w' ? ChessColor::White : ChessColor::Black;
         m_castle_rights = CastleRights::from_fen(tokens.at(2));
 
-        if (tokens.size() == 6) {
-            auto en_passant_str = tokens.at(3);
-            m_en_passant_target = {en_passant_str.at(0), en_passant_str.at(1)};
-        } else {
+        auto en_passant_str = tokens.at(3);
+        if (en_passant_str == "-") {
             m_en_passant_target = {};
+        } else {
+            m_en_passant_target = {en_passant_str.at(0), en_passant_str.at(1)};
         }
 
-        m_half_move_clock =
-            static_cast<size_t>(std::stoi(tokens.at(tokens.size() - 2)));
-        m_full_move_count =
-            static_cast<size_t>(std::stoi(tokens.at(tokens.size() - 1)));
+        m_half_move_clock = static_cast<size_t>(std::stoi(tokens.at(tokens.size() - 2)));
+        m_full_move_count = static_cast<size_t>(std::stoi(tokens.at(tokens.size() - 1)));
     } catch (std::logic_error e) {
         std::cerr << e.what() << "\n";
-        throw std::logic_error(
-            "Something went wrong while parsing the FEN string: " + fen_string);
+        throw std::logic_error("Something went wrong while parsing the FEN string: " + fen_string);
     }
 }
 
 char color_to_char(ChessColor color) {
     switch (color) {
-        case ChessColor::White:
-            return 'w';
-        case ChessColor::Black:
-            return 'b';
-        case ChessColor::Neutral:
-            return 'n';
+        case ChessColor::White: return 'w';
+        case ChessColor::Black: return 'b';
+        case ChessColor::Neutral: return 'n';
     }
 }
 
@@ -142,8 +134,7 @@ void ChessBoard::make_move(const ChessMove& move) {
 
     if (move.castle_move.has_value()) {
         const auto& castle_move{move.castle_move.value()};
-        m_position[castle_move.rook_target] =
-            m_position[castle_move.rook_start];
+        m_position[castle_move.rook_target] = m_position[castle_move.rook_start];
         m_position[castle_move.rook_start] = ' ';
     }
 
@@ -168,14 +159,12 @@ void ChessBoard::unmake_move(const ChessMove& move) {
 
     if (move.castle_move.has_value()) {
         const auto& castle_move{move.castle_move.value()};
-        m_position[castle_move.rook_start] =
-            m_position[castle_move.rook_target];
+        m_position[castle_move.rook_start] = m_position[castle_move.rook_target];
         m_position[castle_move.king_target] = ' ';
     }
 
     if (move.promotion.has_value()) {
-        m_position[move.start_square] =
-            m_active_color == ChessColor::White ? 'P' : 'p';
+        m_position[move.start_square] = m_active_color == ChessColor::White ? 'P' : 'p';
     }
 }
 

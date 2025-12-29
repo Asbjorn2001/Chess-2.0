@@ -12,15 +12,12 @@
 #include <ostream>
 #include <stdexcept>
 #include "src/ChessView.h"
+#include "src/pretty.h"
 
 void cli_game_loop(ChessModel& model, ChessView& view);
-void gui_game_loop(const ChessModel& model,
-                   ChessController& controller,
-                   ChessView& view);
+void gui_game_loop(const ChessModel& model, ChessController& controller, ChessView& view);
 void move_generation_test(int depth);
-int move_generation_test(const ChessBoard& board,
-                         const MoveGenerator& generator,
-                         int depth);
+int move_generation_test(const ChessBoard& board, const MoveGenerator& generator, int depth);
 
 constexpr size_t window_size = 640;
 
@@ -30,9 +27,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    auto window{SDL_CreateWindow("Chess 2.0", SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED, window_size,
-                                 window_size, 0)};
+    auto window{SDL_CreateWindow("Chess 2.0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                 window_size, window_size, 0)};
 
     if (!window) {
         std::cerr << "Error creating SDL window" << SDL_GetError() << "\n";
@@ -51,7 +47,10 @@ int main(int argc, char* argv[]) {
         ChessController controller{model};
         ChessView view{renderer, model};
 
-        // move_generation_test(6);
+        Position::Position p{};
+        std::cout << p.as_fen() << "\n";
+        std::cout << p;
+        // move_generation_test(5);
 
         gui_game_loop(model, controller, view);
         // cli_game_loop(game, view);
@@ -64,9 +63,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void gui_game_loop(const ChessModel& model,
-                   ChessController& controller,
-                   ChessView& view) {
+void gui_game_loop(const ChessModel& model, ChessController& controller, ChessView& view) {
     bool app_running{true};
     while (app_running) {
         if (model.is_checkmate) {
@@ -74,14 +71,12 @@ void gui_game_loop(const ChessModel& model,
         SDL_Event event{};
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
-                case SDL_QUIT:
-                    app_running = false;
+                case SDL_QUIT: app_running = false;
                 case SDL_KEYDOWN:
                     if (event.key.keysym.sym == SDLK_ESCAPE) {
                         app_running = false;
                     }
-                default:
-                    break;
+                default: break;
             }
             controller.handle_event(event);
         }
@@ -96,17 +91,13 @@ void move_generation_test(int depth) {
         int res = move_generation_test(ChessBoard(), MoveGenerator(), n);
         auto end = std::chrono::steady_clock::now();
         auto duration = end - start;
-        auto millis =
-            std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-        std::cout << std::format(
-            "Depth: {} ply  Result: {} positions  Duration: {} milliseconds\n",
-            n, res, millis.count());
+        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+        std::cout << std::format("Depth: {} ply  Result: {} positions  Duration: {} milliseconds\n",
+                                 n, res, millis.count());
     }
 }
 
-int move_generation_test(const ChessBoard& board,
-                         const MoveGenerator& generator,
-                         int depth) {
+int move_generation_test(const ChessBoard& board, const MoveGenerator& generator, int depth) {
     if (depth == 0) {
         return 1;
     }
@@ -116,8 +107,7 @@ int move_generation_test(const ChessBoard& board,
     for (const auto& [sq, moves] : position.legal_moves) {
         for (const auto& move : moves) {
             const auto new_board = board.copy_and_move(move);
-            num_positions +=
-                move_generation_test(new_board, generator, depth - 1);
+            num_positions += move_generation_test(new_board, generator, depth - 1);
         }
     }
 

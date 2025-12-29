@@ -7,5 +7,7 @@ BraceWrapping:
   AfterControlStatement: false
   BeforeElse: false
 AllowShortEnumsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+
 
 

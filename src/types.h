@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdint>
+#include <string>
 
 using Bitboard = uint64_t;
 using Key = uint_fast64_t;
@@ -109,6 +110,26 @@ ENABLE_INCR_OPERATORS_ON(Rank)
 
 #undef ENABLE_INCR_OPERATORS_ON
 
+constexpr CastlingRights operator|(CastlingRights lhs, CastlingRights rhs) {
+    return CastlingRights(int(lhs) | int(rhs));
+}
+
+constexpr CastlingRights& operator|=(CastlingRights& lhs, CastlingRights rhs) {
+    return lhs = CastlingRights(int(lhs) | int(rhs));
+}
+
+constexpr CastlingRights operator&(CastlingRights lhs, CastlingRights rhs) {
+    return CastlingRights(int(lhs) & int(rhs));
+}
+
+constexpr CastlingRights& operator&=(CastlingRights& lhs, CastlingRights rhs) {
+    return lhs = CastlingRights(int(lhs) & int(rhs));
+}
+
+constexpr CastlingRights& operator~(CastlingRights& cr) {
+    return cr = ANY_CASTLING & CastlingRights(~int(cr));
+}
+
 constexpr Direction operator+(Direction d1, Direction d2) {
     return Direction(int(d1) + int(d2));
 }
@@ -185,6 +206,43 @@ constexpr Rank rank_of(Square s) {
 
 constexpr Direction pawn_push(Color c) {
     return c == WHITE ? NORTH : SOUTH;
+}
+
+constexpr char as_char(Piece p) {
+    switch (p) {
+        case W_PAWN: return 'P';
+        case W_KNIGHT: return 'N';
+        case W_BISHOP: return 'B';
+        case W_ROOK: return 'R';
+        case W_QUEEN: return 'Q';
+        case W_KING: return 'K';
+        case B_PAWN: return 'p';
+        case B_KNIGHT: return 'n';
+        case B_BISHOP: return 'b';
+        case B_ROOK: return 'r';
+        case B_QUEEN: return 'q';
+        case B_KING: return 'k';
+        case NO_PIECE: return ' ';
+        default: return ' ';
+    }
+}
+
+constexpr Piece from_char(char c) {
+    switch (c) {
+        case 'P': return W_PAWN;
+        case 'N': return W_KNIGHT;
+        case 'B': return W_BISHOP;
+        case 'R': return W_ROOK;
+        case 'Q': return W_QUEEN;
+        case 'K': return W_KING;
+        case 'p': return B_PAWN;
+        case 'n': return B_KNIGHT;
+        case 'b': return B_BISHOP;
+        case 'r': return B_ROOK;
+        case 'q': return B_QUEEN;
+        case 'k': return B_KING;
+        default: return NO_PIECE;
+    }
 }
 
 enum MoveType {
