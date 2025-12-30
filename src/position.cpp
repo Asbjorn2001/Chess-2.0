@@ -5,7 +5,7 @@
 #include <sstream>
 #include "pretty.h"
 
-namespace Position {
+using namespace Bitboards;
 
 Position::Position(const std::string fenStr) {
     std::istringstream ss{fenStr};
@@ -103,23 +103,6 @@ std::string Position::as_fen() const {
     return ss.str();
 }
 
-std::ostream& operator<<(std::ostream& os, const Position& p) {
-    std::string s = "+---+---+---+---+---+---+---+---+\n";
-
-    for (Rank r = RANK_8; r >= RANK_1; --r) {
-        for (File f = FILE_A; f <= FILE_H; ++f) {
-            s += "  ";
-            s += as_char(p.piece_on(make_square(f, r)));
-            s += " ";
-        }
-
-        s += "| " + std::to_string(1 + r) + "\n+---+---+---+---+---+---+---+---+\n";
-    }
-    s += "  a   b   c   d   e   f   g   h\n";
-
-    return os << s;
-}
-
 Bitboard Position::pieces() const {
     return byTypeBB[ALL_PIECES];
 }
@@ -176,5 +159,3 @@ bool Position::can_castle(CastlingRights cr) const {
 bool Position::empty(Square s) const {
     return piece_on(s) == NO_PIECE;
 }
-
-}  // namespace Position

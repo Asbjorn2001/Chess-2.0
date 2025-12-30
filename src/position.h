@@ -1,8 +1,8 @@
+#pragma once
+
 #include <array>
 #include <ostream>
 #include "bitboard.h"
-
-namespace Position {
 
 struct StateInfo {
     Square epSquare;
@@ -19,7 +19,8 @@ class Position {
    public:
     Position(std::string fenStr = fen_start_position);
     std::string as_fen() const;
-    friend std::ostream& operator<<(std::ostream& os, const Position& p);
+    // friend std::string pretty(const Position& p);
+    // friend std::ostream& operator<<(std::ostream& os, const Position& p);
 
     // All pieces
     Bitboard pieces() const;
@@ -48,5 +49,3 @@ class Position {
 };
 
 Position from_fen(const std::string fenStr);
-
-}  // namespace Position

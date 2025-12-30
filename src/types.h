@@ -1,6 +1,7 @@
+#pragma once
+
 #include <cassert>
 #include <cstdint>
-#include <string>
 
 using Bitboard = uint64_t;
 using Key = uint_fast64_t;

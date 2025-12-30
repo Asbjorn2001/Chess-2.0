@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include "ChessSquare.h"
+#include "position.h"
 
 constexpr std::array<char, 8> files{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
 constexpr std::array<char, 8> ranks{'1', '2', '3', '4', '5', '6', '7', '8'};
@@ -100,7 +101,7 @@ struct CastleRights {
 /// FEN string: position, active color, castling rights, en passant targets
 /// (optional), halfmove clock, fullmove number ref:
 /// https://www.chess.com/terms/fen-chess
-constexpr auto fen_start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+// constexpr auto fen_start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 class ChessBoard {
    public:

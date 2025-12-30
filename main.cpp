@@ -47,9 +47,10 @@ int main(int argc, char* argv[]) {
         ChessController controller{model};
         ChessView view{renderer, model};
 
-        Position::Position p{};
+        Position p{};
         std::cout << p.as_fen() << "\n";
         std::cout << p;
+        std::cout << pretty(p.pieces());
         // move_generation_test(5);
 
         gui_game_loop(model, controller, view);
