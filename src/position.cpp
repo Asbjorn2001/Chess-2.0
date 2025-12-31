@@ -108,24 +108,6 @@ std::string Position::as_fen() const {
     return ss.str();
 }
 
-inline Bitboard Position::pieces() const {
-    return byTypeBB[ALL_PIECES];
-}
-
-inline Bitboard Position::pieces(Color c) const {
-    return byColorBB[c];
-}
-
-template <typename... PieceType>
-inline Bitboard Position::pieces(PieceType... pts) const {
-    return (byTypeBB[pts] | ...);
-}
-
-template <typename... PieceType>
-inline Bitboard Position::pieces(Color c, PieceType... pts) const {
-    return pieces(c) & pieces(pts...);
-}
-
 Piece Position::piece_on(Square s) const {
     assert(is_ok(s));
     return board[s];
@@ -178,36 +160,6 @@ Square Position::castling_rook_square(CastlingRights cr) const {
 
 bool Position::empty(Square s) const {
     return piece_on(s) == NO_PIECE;
-}
-
-// Computes a bitboard of all pieces which attack a given square.
-// Slider attacks use the occupied bitboard to indicate occupancy.
-Bitboard Position::attackers_to(Square s) const {
-    return attackers_to(s, pieces());
-}
-
-template <PieceType... Pts>
-Bitboard Position::attackers_to(Square s) const {
-    return attackers_to<Pts...>(s, pieces());
-}
-
-Bitboard Position::attackers_to(Square s, Bitboard occupied) const {
-    return attackers_to<KNIGHT, BISHOP, ROOK, QUEEN, KING>(s, occupied) |
-           attacks_bb<PAWN>(s, WHITE) | attacks_bb<PAWN>(s, BLACK);
-}
-
-template <PieceType... Pts>
-Bitboard Position::attackers_to(Square s, Bitboard occupied) const {
-    return ((attacks_bb(Pts, s, occupied) & pieces(Pts)) | ...);
-}
-
-bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
-    return attackers_to(s, occupied) & pieces(c);
-}
-
-template <PieceType... Pts>
-bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
-    return attackers_to<Pts...>(s, occupied) & pieces(c);
 }
 
 bool Position::legal(Move m) const {

@@ -55,8 +55,8 @@ class Position {
     Bitboard pieces(PieceType... pts) const;
     template <typename... PieceType>
     Bitboard pieces(Color c, PieceType... pts) const;
-    Piece piece_on(Square s) const;
 
+    Piece piece_on(Square s) const;
     template <PieceType Pt>
     Square square(Color c) const;
 
@@ -122,4 +122,52 @@ inline Square Position::ep_square() const {
 
 inline Piece Position::moved_piece(Move m) const {
     return piece_on(m.from_sq());
+}
+
+inline Bitboard Position::pieces() const {
+    return byTypeBB[ALL_PIECES];
+}
+
+inline Bitboard Position::pieces(Color c) const {
+    return byColorBB[c];
+}
+
+template <typename... PieceType>
+inline Bitboard Position::pieces(PieceType... pts) const {
+    return (byTypeBB[pts] | ...);
+}
+
+// Computes a bitboard of all pieces which attack a given square.
+// Slider attacks use the occupied bitboard to indicate occupancy.
+inline Bitboard Position::attackers_to(Square s) const {
+    return attackers_to(s, pieces());
+}
+
+inline Bitboard Position::attackers_to(Square s, Bitboard occupied) const {
+    return attackers_to<KNIGHT, BISHOP, ROOK, QUEEN, KING>(s, occupied) |
+           attacks_bb<PAWN>(s, WHITE) | attacks_bb<PAWN>(s, BLACK);
+}
+
+inline bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
+    return attackers_to(s, occupied) & pieces(c);
+}
+
+template <typename... PieceType>
+inline Bitboard Position::pieces(Color c, PieceType... pts) const {
+    return pieces(c) & pieces(pts...);
+}
+
+template <PieceType... Pts>
+inline Bitboard Position::attackers_to(Square s) const {
+    return attackers_to<Pts...>(s, pieces());
+}
+
+template <PieceType... Pts>
+inline Bitboard Position::attackers_to(Square s, Bitboard occupied) const {
+    return ((attacks_bb(Pts, s, occupied) & pieces(Pts)) | ...);
+}
+
+template <PieceType... Pts>
+inline bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
+    return attackers_to<Pts...>(s, occupied) & pieces(c);
 }
