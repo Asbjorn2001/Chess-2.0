@@ -43,10 +43,11 @@ void init_magics(PieceType pt, Bitboard table[], Magic magics[][2]) {
 
         Bitboard b{0};
         do {
-            m.attacks[_pext_u64(b, m.mask)] = Bitboards::sliding_attack(pt, s, b);
+            m.attacks[pext(b, m.mask)] = Bitboards::sliding_attack(pt, s, b);
 
             ++size;
             b = (b - m.mask) & m.mask;
         } while (b);
+        m.size = size;
     }
 }

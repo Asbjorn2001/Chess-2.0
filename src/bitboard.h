@@ -3,7 +3,9 @@
 #include <immintrin.h>
 #include <popcntintrin.h>
 #include <array>
+#include <cassert>
 #include <cstdint>
+#include <iostream>
 #include "types.h"
 
 namespace Bitboards {
@@ -37,6 +39,25 @@ extern Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 constexpr Bitboard square_bb(Square s) {
     assert(is_ok(s));
     return (1ULL << s);
+}
+
+// Returns a bitboard representing the squares in the semi-open
+// segment between the squares s1 and s2 (excluding s1 but including s2). If the
+// given squares are not on a same file/rank/diagonal, it returns s2. For instance,
+// between_bb(SQ_C4, SQ_F7) will return a bitboard with squares D5, E6 and F7, but
+// between_bb(SQ_E6, SQ_F8) will return a bitboard with the square F8. This trick
+// allows to generate non-king evasion moves faster: the defending piece must either
+// interpose itself to cover the check or capture the checking piece.
+constexpr Bitboard between_bb(Square s1, Square s2) {
+    return BetweenBB[s1][s2];
+}
+
+// Returns a bitboard representing an entire line (from board edge
+// to board edge) that intersects the two given squares. If the given squares
+// are not on a same file/rank/diagonal, the function returns 0. For instance,
+// line_bb(SQ_C4, SQ_F7) will return a bitboard with the A2-G8 diagonal.
+constexpr Bitboard line_bb(Square s1, Square s2) {
+    return LineBB[s1][s2];
 }
 
 // Overloads of bitwise operators between a Bitboard and a Square for testing
@@ -124,6 +145,24 @@ inline constexpr int64_t popcount(Bitboard b) {
     return _mm_popcnt_u64(b);
 }
 
+inline constexpr Square lsb(Bitboard b) {
+    assert(b);
+    return Square(__builtin_ctzll(b));
+}
+
+inline constexpr Square msb(Bitboard b) {
+    assert(b);
+    return Square(63 ^ __builtin_clzll(b));
+}
+
+// Finds and clears the least significant bit in a non-zero bitboard.
+inline Square pop_lsb(Bitboard& b) {
+    assert(b);
+    const Square s = lsb(b);
+    b &= b - 1;
+    return s;
+}
+
 inline constexpr auto SquareDistance = []() constexpr {
     std::array<std::array<int8_t, SQUARE_NB>, SQUARE_NB> distances{};
     for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1) {
@@ -143,12 +182,14 @@ inline constexpr int distance<Square>(Square x, Square y) {
 struct Magic {
     Bitboard mask;
     Bitboard* attacks;
+    uint64_t size;
 
-    inline constexpr uint64_t index(Bitboard occupied) const {
-        return _pext_u64(static_cast<uint64_t>(occupied), static_cast<uint64_t>(mask));
+    inline constexpr uint64_t index(Bitboard occupied) const { return pext(occupied, mask); }
+
+    constexpr Bitboard attacks_bb(Bitboard occupied) const {
+        assert(index(occupied) < size);
+        return attacks[index(occupied)];
     }
-
-    constexpr Bitboard attacks_bb(Bitboard occupied) const { return attacks[index(occupied)]; }
 };
 
 template <Direction D>
@@ -182,7 +223,8 @@ constexpr Bitboard safe_destination(Square s, int step) {
 }
 
 constexpr Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occupied) {
-    Bitboard attacks{0};
+    assert(pt >= BISHOP && pt <= QUEEN && is_ok(sq));
+    Bitboard attacks{};
     Direction rook_directions[4]{NORTH, SOUTH, EAST, WEST};
     Direction bishop_directions[4]{NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST};
 
@@ -199,14 +241,14 @@ constexpr Bitboard sliding_attack(PieceType pt, Square sq, Bitboard occupied) {
 }
 
 constexpr Bitboard knight_attack(Square sq) {
-    Bitboard b = {};
+    Bitboard b{};
     for (int step : {-17, -15, -10, -6, 6, 10, 15, 17})
         b |= safe_destination(sq, step);
     return b;
 }
 
 constexpr Bitboard king_attack(Square sq) {
-    Bitboard b = {};
+    Bitboard b{};
     for (int step : {-9, -8, -7, -1, 1, 7, 8, 9})
         b |= safe_destination(sq, step);
     return b;
@@ -248,7 +290,7 @@ inline constexpr auto PseudoAttacks = []() constexpr {
 // assuming an empty board.
 template <PieceType Pt>
 inline constexpr Bitboard attacks_bb(Square s, Color c = COLOR_NB) {
-    assert((Pt != PAWN || c < COLOR_NB) && (is_ok(s)));
+    assert((Pt != PAWN || c < COLOR_NB) && is_ok(s));
     return Pt == PAWN ? PseudoAttacks[c][s] : PseudoAttacks[Pt][s];
 }
 
@@ -261,7 +303,7 @@ inline constexpr Bitboard attacks_bb(Square s, Bitboard occupied) {
 
     switch (Pt) {
         case BISHOP:
-        case ROOK: return Magics[s][Pt - BISHOP].attacks_bb(occupied);
+        case ROOK: assert(Pt - BISHOP < 2); return Magics[s][Pt - BISHOP].attacks_bb(occupied);
         case QUEEN: return attacks_bb<BISHOP>(s, occupied) | attacks_bb<ROOK>(s, occupied);
         default: return PseudoAttacks[Pt][s];
     }
@@ -282,15 +324,17 @@ inline constexpr Bitboard attacks_bb(PieceType pt, Square s, Bitboard occupied) 
 }
 
 inline constexpr Bitboard attacks_bb(Piece pc, Square s) {
-    if (type_of(pc) == PAWN)
+    if (type_of(pc) == PAWN) {
         return PseudoAttacks[color_of(pc)][s];
+    }
 
     return PseudoAttacks[type_of(pc)][s];
 }
 
 inline constexpr Bitboard attacks_bb(Piece pc, Square s, Bitboard occupied) {
-    if (type_of(pc) == PAWN)
+    if (type_of(pc) == PAWN) {
         return PseudoAttacks[color_of(pc)][s];
+    }
 
     return attacks_bb(type_of(pc), s, occupied);
-}  // namespace Bitboards
+}

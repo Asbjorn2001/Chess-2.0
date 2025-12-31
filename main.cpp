@@ -12,6 +12,8 @@
 #include <ostream>
 #include <stdexcept>
 #include "src/ChessView.h"
+#include "src/bitboard.h"
+#include "src/movegen.h"
 #include "src/pretty.h"
 
 void cli_game_loop(ChessModel& model, ChessView& view);
@@ -41,6 +43,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    Bitboards::init();
+
     try {
         Settings settings{640, 0, 0, true};
         ChessModel model{ChessBoard(), settings};
@@ -52,8 +56,13 @@ int main(int argc, char* argv[]) {
         std::cout << p;
         std::cout << pretty(p.pieces());
         // move_generation_test(5);
+        auto legalMoves = MoveList<LEGAL>(p);
+        std::cout << legalMoves.size() << "\n";
+        for (auto m : legalMoves) {
+            std::cout << m << "\n";
+        }
 
-        gui_game_loop(model, controller, view);
+        // gui_game_loop(model, controller, view);
         // cli_game_loop(game, view);
     } catch (std::logic_error e) {
         std::cout << "Something went wrong: " << e.what() << "\n";

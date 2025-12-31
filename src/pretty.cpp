@@ -1,3 +1,4 @@
+#include <sstream>
 #include "pretty.h"
 #include "types.h"
 
@@ -39,6 +40,10 @@ std::string pretty(Bitboard b) {
     return s;
 }
 
+std::string pretty(const Move m) {
+    return m.type_of() == CASTLING ? "O-O" : pretty(m.from_sq()) + "->" + pretty(m.to_sq());
+}
+
 std::ostream& operator<<(std::ostream& os, const Position& p) {
     return os << pretty(p);
 }
@@ -53,4 +58,8 @@ std::ostream& operator<<(std::ostream& os, Piece p) {
 
 std::ostream& operator<<(std::ostream& os, PieceType pt) {
     return os << as_char(Piece(pt));
+}
+
+std::ostream& operator<<(std::ostream& os, Move m) {
+    return os << pretty(m);
 }

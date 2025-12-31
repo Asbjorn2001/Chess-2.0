@@ -1,13 +1,39 @@
 #pragma once
 
 #include <array>
-#include <ostream>
+#include <string>
 #include "bitboard.h"
+#include "types.h"
+
+constexpr auto CastlingPaths = []() {
+    std::array<Bitboard, CASTLING_RIGHT_NB> paths{};
+    paths[WHITE_OO] = SQ_F1 | SQ_G1;
+    paths[WHITE_OOO] = SQ_B1 | SQ_C1 | SQ_D1;
+    paths[BLACK_OO] = SQ_F8 | SQ_G8;
+    paths[BLACK_OOO] = SQ_B8 | SQ_C8 | SQ_D8;
+
+    return paths;
+}();
+
+constexpr auto CastlingRookSquares = []() {
+    std::array<Square, CASTLING_RIGHT_NB> squares{};
+    squares[WHITE_OO] = SQ_H1;
+    squares[WHITE_OOO] = SQ_A1;
+    squares[BLACK_OO] = SQ_H8;
+    squares[BLACK_OOO] = SQ_A8;
+
+    return squares;
+}();
 
 struct StateInfo {
+    StateInfo() = default;
+
     Square epSquare;
     CastlingRights castlingRights;
     int rule50;
+    Bitboard checkersBB{};
+    Bitboard blockersForKing[COLOR_NB];
+    Bitboard pinners[COLOR_NB];
 };
 
 /// FEN string: position, active color, castling rights, en passant targets
@@ -31,21 +57,69 @@ class Position {
     Bitboard pieces(Color c, PieceType... pts) const;
     Piece piece_on(Square s) const;
 
+    template <PieceType Pt>
+    Square square(Color c) const;
+
+    bool legal(Move m) const;
+    bool pseudo_legal(Move m) const;
+
+    void make_move(Move m);
+    void unmake_move(Move m);
+    Piece moved_piece(Move m) const;
+
     bool empty(Square s) const;
+
     bool can_castle(CastlingRights cr) const;
+    bool castling_impeded(CastlingRights cr) const;
+    Square castling_rook_square(CastlingRights cr) const;
+
+    Color side_to_move() const;
+    Bitboard checkers() const;
+    Bitboard blockers_for_king(Color c) const;
+    Square ep_square() const;
 
    private:
     std::array<Piece, SQUARE_NB> board{};
     std::array<Bitboard, COLOR_NB> byColorBB{};
     std::array<Bitboard, PIECE_TYPE_NB> byTypeBB{};
-    StateInfo st;
+    StateInfo st{};
     Color sideToMove;
     int gamePly;
 
     void put_piece(Piece p, Square s);
     void remove_piece(Square s);
     void move_piece(Square from, Square to);
-    void set_castling_rights();
+    void update_slider_blockers(Color c);
+
+    Bitboard attackers_to(Square s) const;
+    template <PieceType... Pts>
+    Bitboard attackers_to(Square s) const;
+
+    Bitboard attackers_to(Square s, Bitboard occupied) const;
+    template <PieceType... Pts>
+    Bitboard attackers_to(Square s, Bitboard occupied) const;
+
+    bool attackers_to_exist(Square s, Bitboard occupied, Color c) const;
+    template <PieceType... Pts>
+    bool attackers_to_exist(Square s, Bitboard occupied, Color c) const;
 };
 
-Position from_fen(const std::string fenStr);
+inline Color Position::side_to_move() const {
+    return sideToMove;
+}
+
+inline Bitboard Position::blockers_for_king(Color c) const {
+    return st.blockersForKing[c];
+}
+
+inline Bitboard Position::checkers() const {
+    return st.checkersBB;
+}
+
+inline Square Position::ep_square() const {
+    return st.epSquare;
+}
+
+inline Piece Position::moved_piece(Move m) const {
+    return piece_on(m.from_sq());
+}

@@ -6,6 +6,7 @@ struct Perft {
     std::string fen;
 };
 
+// Source: https://gist.github.com/peterellisjones/8c46c28141c162d1d8a0f0badbc9cff9
 const std::array<Perft, 23> perfTests = {
     {{1, 8, "r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2"},
      {1, 8, "8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3"},

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <array>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 
 using Bitboard = uint64_t;
@@ -205,6 +207,18 @@ constexpr Rank rank_of(Square s) {
     return Rank(s >> 3);
 }
 
+constexpr Square relative_square(Color c, Square s) {
+    return Square(s ^ (c * 56));
+}
+
+constexpr Rank relative_rank(Color c, Rank r) {
+    return Rank(r ^ (c * 7));
+}
+
+constexpr Rank relative_rank(Color c, Square s) {
+    return relative_rank(c, rank_of(s));
+}
+
 constexpr Direction pawn_push(Color c) {
     return c == WHITE ? NORTH : SOUTH;
 }
@@ -268,12 +282,13 @@ enum MoveType {
 
 class Move {
    public:
-    Move(uint16_t data) : m_data(data) {}
+    Move() = default;
+    Move(uint16_t data) : data(data) {}
 
-    Move(Square from, Square to) : m_data(static_cast<uint16_t>((from << 6) | to)) {}
+    Move(Square from, Square to) : data(static_cast<uint16_t>((from << 6) | to)) {}
 
     Move(Square from, Square to, uint16_t flags)
-        : m_data(static_cast<uint16_t>((flags << 12) | ((from & 0x3f) << 6) | to)) {}
+        : data(static_cast<uint16_t>((flags << 12) | ((from & 0x3f) << 6) | to)) {}
 
     template <MoveType T>
     static constexpr Move make(Square from, Square to, PieceType pt = KNIGHT) {
@@ -282,30 +297,30 @@ class Move {
 
     constexpr Square from_sq() const {
         assert(is_ok());
-        return Square((m_data >> 6) & 0x3F);
+        return Square((data >> 6) & 0x3F);
     }
 
     constexpr Square to_sq() const {
         assert(is_ok());
-        return Square(m_data & 0x3F);
+        return Square(data & 0x3F);
     }
 
-    constexpr MoveType type_of() const { return MoveType(m_data & (3 << 14)); }
+    constexpr MoveType type_of() const { return MoveType(data & (3 << 14)); }
 
-    constexpr PieceType promotion_type() const { return PieceType(((m_data >> 12) & 3) + KNIGHT); }
+    constexpr PieceType promotion_type() const { return PieceType(((data >> 12) & 3) + KNIGHT); }
 
-    constexpr bool is_ok() const { return none().m_data != m_data && null().m_data != m_data; }
+    constexpr bool is_ok() const { return none().data != data && null().data != data; }
 
     static constexpr Move null() { return Move(65); }
     static constexpr Move none() { return Move(0); }
 
-    constexpr bool operator==(const Move& rhs) const { return m_data == rhs.m_data; }
-    constexpr bool operator!=(const Move& rhs) const { return m_data != rhs.m_data; }
+    constexpr bool operator==(const Move& rhs) const { return data == rhs.data; }
+    constexpr bool operator!=(const Move& rhs) const { return data != rhs.data; }
 
-    constexpr explicit operator bool() const { return m_data != 0; }
+    constexpr explicit operator bool() const { return data != 0; }
 
-    constexpr std::uint16_t raw() const { return m_data; }
+    constexpr std::uint16_t raw() const { return data; }
 
    protected:
-    uint16_t m_data;
+    uint16_t data;
 };
