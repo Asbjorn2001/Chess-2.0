@@ -1,9 +1,8 @@
 #pragma once
 
-#include <array>
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
+#include "macros.h"
 
 using Bitboard = uint64_t;
 using Key = uint_fast64_t;
@@ -113,26 +112,6 @@ ENABLE_INCR_OPERATORS_ON(Rank)
 
 #undef ENABLE_INCR_OPERATORS_ON
 
-constexpr CastlingRights operator|(CastlingRights lhs, CastlingRights rhs) {
-    return CastlingRights(int(lhs) | int(rhs));
-}
-
-constexpr CastlingRights& operator|=(CastlingRights& lhs, CastlingRights rhs) {
-    return lhs = CastlingRights(int(lhs) | int(rhs));
-}
-
-constexpr CastlingRights operator&(CastlingRights lhs, CastlingRights rhs) {
-    return CastlingRights(int(lhs) & int(rhs));
-}
-
-constexpr CastlingRights& operator&=(CastlingRights& lhs, CastlingRights rhs) {
-    return lhs = CastlingRights(int(lhs) & int(rhs));
-}
-
-constexpr CastlingRights& operator~(CastlingRights& cr) {
-    return cr = ANY_CASTLING & CastlingRights(~int(cr));
-}
-
 constexpr Direction operator+(Direction d1, Direction d2) {
     return Direction(int(d1) + int(d2));
 }
@@ -223,7 +202,23 @@ constexpr Direction pawn_push(Color c) {
     return c == WHITE ? NORTH : SOUTH;
 }
 
-constexpr char as_char(Piece p) {
+constexpr CastlingRights cr_from_color(Color c) {
+    return c == WHITE ? WHITE_CASTLING : BLACK_CASTLING;
+}
+
+constexpr CastlingRights cr_from_sq(Square s) {
+    switch (s) {
+        case SQ_A1: return WHITE_OOO;
+        case SQ_H1: return WHITE_OO;
+        case SQ_A8: return BLACK_OOO;
+        case SQ_H8: return BLACK_OO;
+        case SQ_E1: return WHITE_CASTLING;
+        case SQ_E8: return BLACK_CASTLING;
+        default: return NO_CASTLING;
+    }
+}
+
+constexpr char pc_as_char(Piece p) {
     switch (p) {
         case W_PAWN: return 'P';
         case W_KNIGHT: return 'N';
@@ -242,7 +237,7 @@ constexpr char as_char(Piece p) {
     }
 }
 
-constexpr Piece from_char(char c) {
+constexpr Piece pc_from_char(char c) {
     switch (c) {
         case 'P': return W_PAWN;
         case 'N': return W_KNIGHT;
@@ -266,6 +261,28 @@ enum MoveType {
     EN_PASSANT = 2 << 14,
     CASTLING = 3 << 14
 };
+
+#define ENABLE_BITWISE_OPERATORS_ON(T)       \
+    constexpr T operator|(T lhs, T rhs) {    \
+        return T(int(lhs) | int(rhs));       \
+    }                                        \
+    constexpr T& operator|=(T& lhs, T rhs) { \
+        return lhs = T(int(lhs) | int(rhs)); \
+    }                                        \
+    constexpr T operator&(T lhs, T rhs) {    \
+        return T(int(lhs) & int(rhs));       \
+    }                                        \
+    constexpr T& operator&=(T& lhs, T rhs) { \
+        return lhs = T(int(lhs) & int(rhs)); \
+    }
+
+ENABLE_BITWISE_OPERATORS_ON(CastlingRights)
+
+#undef ENABLE_BITWISE_OPERATORS_ON
+
+constexpr CastlingRights& operator~(CastlingRights& cr) {
+    return cr = ANY_CASTLING & CastlingRights(~int(cr));
+}
 
 // A move needs 16 bits to be stored
 //

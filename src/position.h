@@ -25,15 +25,21 @@ constexpr auto CastlingRookSquares = []() {
     return squares;
 }();
 
+constexpr Bitboard RookSquares = SQ_A1 | SQ_A8 | SQ_H1 | SQ_H8;
+constexpr Bitboard KingSquares = SQ_E1 | SQ_E8;
+constexpr Bitboard CastlingSquares = KingSquares | RookSquares;
+
 struct StateInfo {
     StateInfo() = default;
 
-    Square epSquare;
+    Square epSquare = SQ_NONE;
     CastlingRights castlingRights;
     int rule50;
     Bitboard checkersBB{};
     Bitboard blockersForKing[COLOR_NB];
     Bitboard pinners[COLOR_NB];
+    Piece capturedPiece = NO_PIECE;
+    StateInfo* previous;
 };
 
 /// FEN string: position, active color, castling rights, en passant targets
@@ -45,16 +51,14 @@ class Position {
    public:
     Position(std::string fenStr = fen_start_position);
     std::string as_fen() const;
-    // friend std::string pretty(const Position& p);
-    // friend std::ostream& operator<<(std::ostream& os, const Position& p);
 
     // All pieces
     Bitboard pieces() const;
     Bitboard pieces(Color c) const;
-    template <typename... PieceType>
-    Bitboard pieces(PieceType... pts) const;
-    template <typename... PieceType>
-    Bitboard pieces(Color c, PieceType... pts) const;
+    template <PieceType... Pts>
+    Bitboard pieces() const;
+    template <PieceType... Pts>
+    Bitboard pieces(Color c) const;
 
     Piece piece_on(Square s) const;
     template <PieceType Pt>
@@ -67,22 +71,24 @@ class Position {
     void unmake_move(Move m);
     Piece moved_piece(Move m) const;
 
-    bool empty(Square s) const;
+    bool is_empty(Square s) const;
 
     bool can_castle(CastlingRights cr) const;
     bool castling_impeded(CastlingRights cr) const;
     Square castling_rook_square(CastlingRights cr) const;
 
+    // Public getters
     Color side_to_move() const;
     Bitboard checkers() const;
     Bitboard blockers_for_king(Color c) const;
     Square ep_square() const;
+    const StateInfo* state() const;
 
    private:
     std::array<Piece, SQUARE_NB> board{};
     std::array<Bitboard, COLOR_NB> byColorBB{};
     std::array<Bitboard, PIECE_TYPE_NB> byTypeBB{};
-    StateInfo st{};
+    StateInfo* st{};
     Color sideToMove;
     int gamePly;
 
@@ -90,6 +96,10 @@ class Position {
     void remove_piece(Square s);
     void move_piece(Square from, Square to);
     void update_slider_blockers(Color c);
+    void update_state_info(StateInfo* newState);
+
+    void set_castling_rights(CastlingRights cr);
+    void remove_castling_rights(CastlingRights cr);
 
     Bitboard attackers_to(Square s) const;
     template <PieceType... Pts>
@@ -109,15 +119,20 @@ inline Color Position::side_to_move() const {
 }
 
 inline Bitboard Position::blockers_for_king(Color c) const {
-    return st.blockersForKing[c];
+    return st->blockersForKing[c];
 }
 
 inline Bitboard Position::checkers() const {
-    return st.checkersBB;
+    return st->checkersBB;
 }
 
 inline Square Position::ep_square() const {
-    return st.epSquare;
+    return st->epSquare;
+}
+
+template <PieceType Pt>
+inline Square Position::square(Color c) const {
+    return lsb(pieces<Pt>(c));
 }
 
 inline Piece Position::moved_piece(Move m) const {
@@ -132,9 +147,14 @@ inline Bitboard Position::pieces(Color c) const {
     return byColorBB[c];
 }
 
-template <typename... PieceType>
-inline Bitboard Position::pieces(PieceType... pts) const {
-    return (byTypeBB[pts] | ...);
+template <PieceType... Pts>
+inline Bitboard Position::pieces() const {
+    return (byTypeBB[Pts] | ...);
+}
+
+template <PieceType... Pts>
+inline Bitboard Position::pieces(Color c) const {
+    return pieces(c) & pieces<Pts...>();
 }
 
 // Computes a bitboard of all pieces which attack a given square.
@@ -145,16 +165,8 @@ inline Bitboard Position::attackers_to(Square s) const {
 
 inline Bitboard Position::attackers_to(Square s, Bitboard occupied) const {
     return attackers_to<KNIGHT, BISHOP, ROOK, QUEEN, KING>(s, occupied) |
-           attacks_bb<PAWN>(s, WHITE) | attacks_bb<PAWN>(s, BLACK);
-}
-
-inline bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
-    return attackers_to(s, occupied) & pieces(c);
-}
-
-template <typename... PieceType>
-inline Bitboard Position::pieces(Color c, PieceType... pts) const {
-    return pieces(c) & pieces(pts...);
+           (attacks_bb<PAWN>(s, BLACK) & pieces<PAWN>(WHITE)) |
+           (attacks_bb<PAWN>(s, WHITE) & pieces<PAWN>(BLACK));
 }
 
 template <PieceType... Pts>
@@ -164,10 +176,26 @@ inline Bitboard Position::attackers_to(Square s) const {
 
 template <PieceType... Pts>
 inline Bitboard Position::attackers_to(Square s, Bitboard occupied) const {
-    return ((attacks_bb(Pts, s, occupied) & pieces(Pts)) | ...);
+    return ((attacks_bb(Pts, s, occupied) & pieces<Pts>()) | ...);
+}
+
+inline bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
+    return attackers_to(s, occupied) & pieces(c);
 }
 
 template <PieceType... Pts>
 inline bool Position::attackers_to_exist(Square s, Bitboard occupied, Color c) const {
     return attackers_to<Pts...>(s, occupied) & pieces(c);
+}
+
+inline void Position::set_castling_rights(CastlingRights cr) {
+    st->castlingRights |= cr;
+}
+
+inline void Position::remove_castling_rights(CastlingRights cr) {
+    st->castlingRights &= ~cr;
+}
+
+inline const StateInfo* Position::state() const {
+    return st;
 }

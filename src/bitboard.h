@@ -1,3 +1,6 @@
+#ifndef BITBOARD_H
+#define BITBOARD_H
+
 #pragma once
 
 #include <immintrin.h>
@@ -30,12 +33,23 @@ constexpr Bitboard Rank6BB = Rank1BB << (8 * 5);
 constexpr Bitboard Rank7BB = Rank1BB << (8 * 6);
 constexpr Bitboard Rank8BB = Rank1BB << (8 * 7);
 
-struct Magic;
-extern Magic Magics[SQUARE_NB][2];
-
 extern Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 extern Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 
+// inline constexpr Bitboard pext(Bitboard b, Bitboard m) {
+//     return _pext_u64(b, m);
+// }
+
+struct Magic {
+    Bitboard mask;
+    Bitboard* attacks;
+
+    inline constexpr uint64_t index(Bitboard occupied) const { return _pext_u64(occupied, mask); }
+
+    constexpr Bitboard attacks_bb(Bitboard occupied) const { return attacks[index(occupied)]; }
+};
+
+extern Magic Magics[SQUARE_NB][2];
 constexpr Bitboard square_bb(Square s) {
     assert(is_ok(s));
     return (1ULL << s);
@@ -137,10 +151,6 @@ inline constexpr int edge_distance(File f) {
     return std::min(f, File(FILE_H - f));
 }
 
-inline constexpr Bitboard pext(Bitboard b, Bitboard m) {
-    return _pext_u64(b, m);
-}
-
 inline constexpr int64_t popcount(Bitboard b) {
     return _mm_popcnt_u64(b);
 }
@@ -178,19 +188,6 @@ template <>
 inline constexpr int distance<Square>(Square x, Square y) {
     return SquareDistance[x][y];
 }
-
-struct Magic {
-    Bitboard mask;
-    Bitboard* attacks;
-    uint64_t size;
-
-    inline constexpr uint64_t index(Bitboard occupied) const { return pext(occupied, mask); }
-
-    constexpr Bitboard attacks_bb(Bitboard occupied) const {
-        assert(index(occupied) < size);
-        return attacks[index(occupied)];
-    }
-};
 
 template <Direction D>
 constexpr Bitboard shift(Bitboard b) {
@@ -338,3 +335,5 @@ inline constexpr Bitboard attacks_bb(Piece pc, Square s, Bitboard occupied) {
 
     return attacks_bb(type_of(pc), s, occupied);
 }
+
+#endif  // !BITBOARD_H

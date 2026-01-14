@@ -1,6 +1,6 @@
+#include <cassert>
 #include <iostream>
 #include "bitboard.h"
-#include "gtest/gtest.h"
 #include "movegen.h"
 #include "position.h"
 #include "pretty.h"
@@ -51,8 +51,8 @@ Move* generate_pawn_moves(const Position& pos, Move* moveList, Bitboard target) 
     Bitboard enemies = Type == EVASIONS ? pos.checkers() : pos.pieces(Them);
     Bitboard emptySquares = ~pos.pieces();
 
-    Bitboard pawnsOn7 = pos.pieces(Us, PAWN) & RelRank7BB;
-    Bitboard pawnsNotOn7 = pos.pieces(Us, PAWN) & ~RelRank7BB;
+    Bitboard pawnsOn7 = pos.pieces<PAWN>(Us) & RelRank7BB;
+    Bitboard pawnsNotOn7 = pos.pieces<PAWN>(Us) & ~RelRank7BB;
 
     if constexpr (Type != TACTICALS) {
         Bitboard b1 = shift<Up>(pawnsNotOn7) & emptySquares;
@@ -108,8 +108,6 @@ Move* generate_pawn_moves(const Position& pos, Move* moveList, Bitboard target) 
 
             b1 = pawnsNotOn7 & attacks_bb<PAWN>(pos.ep_square(), Them);
 
-            assert(b1);
-
             while (b1) {
                 *moveList++ = Move::make<EN_PASSANT>(pop_lsb(b1), pos.ep_square());
             }
@@ -123,7 +121,7 @@ template <PieceType Pt, Color Us>
 Move* generate_moves(const Position& pos, Move* moveList, Bitboard target) {
     static_assert(Pt != PAWN && Pt != KING, "Unsupported type in generate_moves()");
 
-    Bitboard pieces = pos.pieces(Us, Pt);
+    Bitboard pieces = pos.pieces<Pt>(Us);
     Bitboard occupied = pos.pieces();
 
     while (pieces) {

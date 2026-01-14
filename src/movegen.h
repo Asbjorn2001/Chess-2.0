@@ -1,5 +1,8 @@
+#pragma once
+
 #include <algorithm>
-#include <array>
+#include <cassert>
+#include <cstddef>
 #include "position.h"
 #include "types.h"
 
@@ -21,6 +24,10 @@ struct MoveList {
     explicit MoveList(const Position& pos) : last(generate<T>(pos, moveList)) {}
     const Move* begin() const { return moveList; }
     const Move* end() const { return last; }
+    Move& operator[](size_t index) {
+        assert(index <= size());
+        return *(moveList + index);
+    }
     size_t size() const { return last - moveList; }
     bool contains(Move move) const { return std::find(begin(), end(), move) != end(); }
 

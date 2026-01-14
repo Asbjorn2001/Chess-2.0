@@ -4,71 +4,75 @@
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
+#include <unistd.h>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <format>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <stdexcept>
 #include "src/ChessView.h"
-#include "src/bitboard.h"
-#include "src/movegen.h"
+#include "src/position.h"
 #include "src/pretty.h"
+#include "src/types.h"
 
-void cli_game_loop(ChessModel& model, ChessView& view);
+void cli_game_loop(Position& pos);
 void gui_game_loop(const ChessModel& model, ChessController& controller, ChessView& view);
-void move_generation_test(int depth);
-int move_generation_test(const ChessBoard& board, const MoveGenerator& generator, int depth);
+void node_generation_test(Position&, int depth);
+int generate_nodes(Position& pos, int depth);
 
 constexpr size_t window_size = 640;
 
-int main(int argc, char* argv[]) {
+int init_SDL(SDL_Window* window, SDL_Renderer* renderer) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "Something went wrong initializing SDL\n";
         return 1;
     }
 
-    auto window{SDL_CreateWindow("Chess 2.0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                 window_size, window_size, 0)};
+    window = {SDL_CreateWindow("Chess 2.0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                               window_size, window_size, 0)};
 
     if (!window) {
         std::cerr << "Error creating SDL window" << SDL_GetError() << "\n";
         return 1;
     }
 
-    auto renderer{SDL_CreateRenderer(window, -1, 0)};
+    renderer = {SDL_CreateRenderer(window, -1, 0)};
     if (!renderer) {
         std::cout << stderr << "Error creating SDL Renderer\n";
         return 1;
     }
 
+    return 0;
+}
+
+int main(int argc, char* argv[]) {
+    // SDL_Window* window{};
+    // SDL_Renderer* renderer{};
+    // if (init_SDL(window, renderer) != 0) {
+    //     return 1;
+    // }
+
     Bitboards::init();
 
-    try {
-        Settings settings{640, 0, 0, true};
-        ChessModel model{ChessBoard(), settings};
-        ChessController controller{model};
-        ChessView view{renderer, model};
+    // Settings settings{640, 0, 0, true};
+    // ChessModel model{ChessBoard(), settings};
+    // ChessController controller{model};
+    // ChessView view{renderer, model};
 
-        Position p{};
-        std::cout << p.as_fen() << "\n";
-        std::cout << p;
-        std::cout << pretty(p.pieces());
-        // move_generation_test(5);
-        auto legalMoves = MoveList<LEGAL>(p);
-        std::cout << legalMoves.size() << "\n";
-        for (auto m : legalMoves) {
-            std::cout << m << "\n";
-        }
+    Position p{};
+    std::cout << p << "\n";
+    node_generation_test(p, 6);
 
-        // gui_game_loop(model, controller, view);
-        // cli_game_loop(game, view);
-    } catch (std::logic_error e) {
-        std::cout << "Something went wrong: " << e.what() << "\n";
-    }
+    // gui_game_loop(model, controller, view);
+    // cli_game_loop(p);
 
-    SDL_DestroyWindow(window);
+    // SDL_DestroyRenderer(renderer);
+    // SDL_DestroyWindow(window);
 
     return 0;
 }
@@ -95,59 +99,56 @@ void gui_game_loop(const ChessModel& model, ChessController& controller, ChessVi
     }
 }
 
-void move_generation_test(int depth) {
+void node_generation_test(Position& pos, int depth) {
     for (auto n{1}; n <= depth; ++n) {
         auto start = std::chrono::steady_clock::now();
-        int res = move_generation_test(ChessBoard(), MoveGenerator(), n);
+        long nodes = generate_nodes(pos, n);
         auto end = std::chrono::steady_clock::now();
         auto duration = end - start;
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-        std::cout << std::format("Depth: {} ply  Result: {} positions  Duration: {} milliseconds\n",
-                                 n, res, millis.count());
+        long nodesPerSec = millis.count() ? floor(nodes * 1000 / millis.count()) : 0;
+        std::cout << std::format(
+            "Depth: {} ply  Result: {} Nodes  Duration: {} milliseconds {}\n", n, nodes,
+            millis.count(),
+            nodesPerSec ? std::format("({} nodes/sec)", nodesPerSec) : "(undefined)");
     }
 }
 
-int move_generation_test(const ChessBoard& board, const MoveGenerator& generator, int depth) {
+int generate_nodes(Position& pos, int depth) {
     if (depth == 0) {
         return 1;
     }
 
-    auto position{generator.generate_position_data(board)};
     int num_positions{0};
-    for (const auto& [sq, moves] : position.legal_moves) {
-        for (const auto& move : moves) {
-            const auto new_board = board.copy_and_move(move);
-            num_positions += move_generation_test(new_board, generator, depth - 1);
-        }
+    for (const auto& m : MoveList<LEGAL>(pos)) {
+        pos.make_move(m);
+        num_positions += generate_nodes(pos, depth - 1);
+        pos.unmake_move(m);
     }
 
     return num_positions;
 }
 
-void cli_game_loop(ChessModel& model, ChessView& view) {
-    MoveGenerator move_generator{};
-
+void cli_game_loop(Position& pos) {
     while (true) {
-        std::cout << model.board << "\n\n";
-        std::cout << model.board.as_fen() << "\n";
+        std::cout << "Blockers for king: \n"
+                  << pretty(pos.blockers_for_king(pos.side_to_move())) << "\n";
 
-        view.draw();
+        std::cout << "side to move: " << (pos.side_to_move() == WHITE ? "white" : "black") << "\n";
+        std::cout << pos << "\n";
 
-        auto data = move_generator.generate_position_data(model.board);
-
-        for (const auto& [sq, moves] : data.legal_moves) {
-            std::cout << sq << ") ";
-            for (const auto& move : moves) {
-                std::cout << move << ", ";
-            }
-            std::cout << "\n";
+        auto legalMoves = MoveList<LEGAL>(pos);
+        int count = 0;
+        for (auto m : legalMoves) {
+            std::cout << ++count << ") " << m << "\n";
         }
 
         std::cout << "Choose a move: \n";
         size_t move_num{0};
         std::cin >> move_num;
-        std::cout << "your choose: " << move_num << "\n";
+        Move m = legalMoves[move_num - 1];
+        std::cout << "your choose: " << m << "\n";
 
-        // game.board.move(legal_moves[move_num - 1]);
+        pos.make_move(m);
     }
 }

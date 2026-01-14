@@ -1,8 +1,8 @@
 # Compiler and flags
 CXX = g++-14
 
-OPT ?= -mbmi2
-CXXFLAGS = -Iinclude -std=c++23 -Wall -Weffc++ -Wextra $(OPT)
+OPT ?=
+CXXFLAGS = -Iinclude -std=c++23 -Wall -Weffc++ -Wextra -mbmi2 -MMD -MP $(OPT)
 
 LIB = -lSDL2 -lSDL2_image
 GTEST_LIBS = -lgtest -lgtest_main -pthread
@@ -59,9 +59,11 @@ run: $(BIN)
 	./$(BIN)
 
 test: $(TESTBIN)
-	./$(TESTBIN)
+	./$(TESTBIN) $(if $(FILTER), --gtest_filter=$(FILTER))
 
 # Clean up
 clean:
 	rm -f $(BIN) $(TESTBIN) $(OBJECTS) $(TEST_OBJECTS)
+
+-include $(OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
 

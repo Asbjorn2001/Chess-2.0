@@ -2,12 +2,9 @@
 #include <cerrno>
 #include "../src/pretty.h"
 
-class BitboardTest : public testing::Test {
+class TestBitboard : public testing::Test {
    protected:
-    BitboardTest() {
-        Bitboards::init();
-        testPosition = {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"};
-    }
+    TestBitboard() : testPosition("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8") {}
 
     Position testPosition;
 };
@@ -21,7 +18,7 @@ void test_attacks(Piece pc, Square s, Bitboard occupied, Bitboard expected) {
                                 << pretty(result);
 }
 
-TEST_F(BitboardTest, attacks) {
+TEST_F(TestBitboard, AttacksBBWorks) {
     Bitboard occupied = testPosition.pieces();
     test_attacks(W_ROOK, SQ_H1, occupied, SQ_E1 | SQ_F1 | SQ_G1 | SQ_H2);
 
@@ -39,6 +36,8 @@ TEST_F(BitboardTest, attacks) {
     test_attacks(W_KNIGHT, SQ_E2, occupied, SQ_C1 | SQ_G1 | SQ_G3 | SQ_F4 | SQ_D4 | SQ_C3);
     test_attacks(B_KNIGHT, SQ_D4, occupied,
                  SQ_E2 | SQ_F3 | SQ_F5 | SQ_E6 | SQ_C6 | SQ_B5 | SQ_B3 | SQ_C2);
+    test_attacks(B_KNIGHT, SQ_F2, occupied, SQ_D1 | SQ_H1 | SQ_H3 | SQ_G4 | SQ_E4 | SQ_D3);
+    test_attacks(B_KNIGHT, SQ_E1, occupied, SQ_C2 | SQ_G2 | SQ_D3 | SQ_F3);
 }
 
 void test_between(Square s1, Square s2, Bitboard expected) {
@@ -48,7 +47,7 @@ void test_between(Square s1, Square s2, Bitboard expected) {
                                 << pretty(result);
 }
 
-TEST_F(BitboardTest, between) {
+TEST_F(TestBitboard, BetweenBBWorks) {
     test_between(SQ_C2, SQ_C4, SQ_C3 | SQ_C4);
     test_between(SQ_C6, SQ_B2, square_bb(SQ_B2));
     test_between(SQ_A1, SQ_H8, SQ_B2 | SQ_C3 | SQ_D4 | SQ_E5 | SQ_F6 | SQ_G7 | SQ_H8);
@@ -61,7 +60,7 @@ void test_line(Square s1, Square s2, Bitboard expected) {
                                 << pretty(result);
 }
 
-TEST_F(BitboardTest, lines) {
+TEST_F(TestBitboard, LinesBBWorks) {
     test_line(SQ_C4, SQ_F7, SQ_A2 | SQ_B3 | SQ_C4 | SQ_D5 | SQ_E6 | SQ_F7 | SQ_G8);
     test_line(SQ_A1, SQ_A3, FileABB);
     test_line(SQ_B6, SQ_E6, Rank6BB);
