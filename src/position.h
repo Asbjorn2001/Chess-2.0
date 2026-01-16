@@ -50,6 +50,24 @@ constexpr auto fen_start_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 class Position {
    public:
     Position(std::string fenStr = fen_start_position);
+    ~Position() { delete st; }
+    Position(const Position& rhs) : st(new StateInfo(*rhs.st)) {}
+    Position& operator=(const Position& rhs) {
+        if (this != &rhs) {
+            st = new StateInfo{*rhs.st};
+        }
+        return *this;
+    }
+    Position(Position&& rhs) : st(rhs.st) { rhs.st = nullptr; }
+    Position& operator=(Position&& rhs) {
+        if (this != &rhs) {
+            delete st;
+            st = rhs.st;
+            rhs.st = nullptr;
+        }
+        return *this;
+    }
+
     std::string as_fen() const;
 
     // All pieces
@@ -82,10 +100,11 @@ class Position {
     Bitboard checkers() const;
     Bitboard blockers_for_king(Color c) const;
     Square ep_square() const;
+    std::array<Piece, SQUARE_NB> board() const;
     const StateInfo* state() const;
 
    private:
-    std::array<Piece, SQUARE_NB> board{};
+    std::array<Piece, SQUARE_NB> board_{};
     std::array<Bitboard, COLOR_NB> byColorBB{};
     std::array<Bitboard, PIECE_TYPE_NB> byTypeBB{};
     StateInfo* st{};
@@ -128,6 +147,10 @@ inline Bitboard Position::checkers() const {
 
 inline Square Position::ep_square() const {
     return st->epSquare;
+}
+
+inline std::array<Piece, SQUARE_NB> Position::board() const {
+    return board_;
 }
 
 template <PieceType Pt>

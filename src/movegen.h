@@ -18,6 +18,7 @@ enum GenType {
 
 template <GenType>
 Move* generate(const Position&, Move* moveList);
+int generate_nodes(Position& pos, int depth);
 
 template <GenType T>
 struct MoveList {

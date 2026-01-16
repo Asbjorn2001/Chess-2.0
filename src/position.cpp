@@ -113,38 +113,38 @@ std::string Position::as_fen() const {
 
 Piece Position::piece_on(Square s) const {
     assert(is_ok(s));
-    return board[s];
+    return board_[s];
 }
 
 void Position::put_piece(Piece p, Square s) {
     MY_ASSERT(is_empty(s), "pc: " << p << " s: " << s << " pos:\n" << *this);
-    board[s] = p;
+    board_[s] = p;
     byTypeBB[ALL_PIECES] |= byTypeBB[type_of(p)] |= s;
     byColorBB[color_of(p)] |= s;
 }
 
 void Position::remove_piece(Square s) {
     assert(!is_empty(s));
-    Piece p = board[s];
+    Piece p = board_[s];
 
     byTypeBB[ALL_PIECES] ^= s;
     byTypeBB[type_of(p)] ^= s;
     byColorBB[color_of(p)] ^= s;
-    board[s] = NO_PIECE;
+    board_[s] = NO_PIECE;
 }
 
 // Moves a piece from the from square, to the to square. Assumes the `to` square is empty.
 void Position::move_piece(Square from, Square to) {
     MY_ASSERT(is_empty(to), "pc: " << piece_on(to));
 
-    Piece p = board[from];
+    Piece p = board_[from];
     Bitboard fromTo = from | to;
 
     byTypeBB[ALL_PIECES] ^= fromTo;
     byTypeBB[type_of(p)] ^= fromTo;
     byColorBB[color_of(p)] ^= fromTo;
-    board[from] = NO_PIECE;
-    board[to] = p;
+    board_[from] = NO_PIECE;
+    board_[to] = p;
 }
 
 bool Position::can_castle(CastlingRights cr) const {

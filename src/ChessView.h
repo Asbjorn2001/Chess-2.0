@@ -7,15 +7,13 @@
 #include <unordered_map>
 #include "ChessController.h"
 
-class ChessTexture {
+class Texture {
    public:
-    ChessTexture(SDL_Renderer* renderer, std::string_view path);
-    ChessTexture(const ChessTexture&) = delete;
-    ChessTexture& operator=(const ChessTexture&) = delete;
-    ChessTexture(ChessTexture&& rhs) noexcept : m_texture(rhs.m_texture) {
-        rhs.m_texture = nullptr;
-    };
-    ChessTexture& operator=(ChessTexture&& rhs) noexcept {
+    Texture(SDL_Renderer* renderer, std::string_view path);
+    Texture(const Texture&) = delete;
+    Texture& operator=(const Texture&) = delete;
+    Texture(Texture&& rhs) noexcept : m_texture(rhs.m_texture) { rhs.m_texture = nullptr; };
+    Texture& operator=(Texture&& rhs) noexcept {
         if (this != &rhs) {
             SDL_DestroyTexture(m_texture);
             m_texture = rhs.m_texture;
@@ -23,7 +21,7 @@ class ChessTexture {
         }
         return *this;
     }
-    ~ChessTexture();
+    ~Texture();
 
     void draw(SDL_Renderer* renderer, const SDL_Rect* rect) const;
 
@@ -50,5 +48,5 @@ class ChessView {
 
     SDL_Renderer* m_renderer;
     const ChessModel& m_model;
-    std::unordered_map<char, ChessTexture> m_textures;
+    std::unordered_map<char, Texture> m_textures;
 };

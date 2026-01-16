@@ -17,19 +17,18 @@ constexpr SDL_Color red_t{255, 0, 0, 100};
 constexpr SDL_Color yellow_t{255, 255, 0, 100};
 constexpr SDL_Color orange_t{255, 165, 0, 100};
 
-ChessTexture::ChessTexture(SDL_Renderer* renderer, std::string_view path) {
+Texture::Texture(SDL_Renderer* renderer, std::string_view path) {
     m_texture = IMG_LoadTexture(renderer, &path[0]);
     if (!m_texture) {
-        throw std::logic_error(
-            std::format("Could not create texture from: {}\n", path));
+        throw std::logic_error(std::format("Could not create texture from: {}\n", path));
     }
 }
 
-ChessTexture::~ChessTexture() {
+Texture::~Texture() {
     SDL_DestroyTexture(m_texture);
 }
 
-void ChessTexture::draw(SDL_Renderer* renderer, const SDL_Rect* rect) const {
+void Texture::draw(SDL_Renderer* renderer, const SDL_Rect* rect) const {
     SDL_RenderCopy(renderer, m_texture, nullptr, rect);
 }
 
@@ -43,7 +42,7 @@ ChessView::ChessView(SDL_Renderer* renderer, const ChessModel& model)
 
     for (const auto symbol : piece_symbols) {
         std::string path{std::format("assets/{}.png", symbol)};
-        m_textures.insert_or_assign(symbol, ChessTexture{m_renderer, path});
+        m_textures.insert_or_assign(symbol, Texture{m_renderer, path});
     }
 }
 

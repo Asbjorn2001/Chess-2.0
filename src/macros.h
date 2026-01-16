@@ -14,7 +14,7 @@
         }                                                                                \
     } while (false)
 #else
-#define ASSERT(condition, message) \
-    do {                           \
+#define MY_ASSERT(condition, message) \
+    do {                              \
     } while (false)
 #endif

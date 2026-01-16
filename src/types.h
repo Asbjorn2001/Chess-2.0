@@ -1,7 +1,12 @@
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <cassert>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include "macros.h"
 
 using Bitboard = uint64_t;
@@ -218,23 +223,21 @@ constexpr CastlingRights cr_from_sq(Square s) {
     }
 }
 
-constexpr char pc_as_char(Piece p) {
-    switch (p) {
-        case W_PAWN: return 'P';
-        case W_KNIGHT: return 'N';
-        case W_BISHOP: return 'B';
-        case W_ROOK: return 'R';
-        case W_QUEEN: return 'Q';
-        case W_KING: return 'K';
-        case B_PAWN: return 'p';
-        case B_KNIGHT: return 'n';
-        case B_BISHOP: return 'b';
-        case B_ROOK: return 'r';
-        case B_QUEEN: return 'q';
-        case B_KING: return 'k';
-        case NO_PIECE: return ' ';
-        default: return ' ';
-    }
+constexpr std::array<char, 12> PieceChars = {'P', 'N', 'B', 'R', 'Q', 'K',
+                                             'p', 'n', 'b', 'r', 'q', 'k'};
+
+template <std::integral T>
+constexpr inline Piece pc_from_index(T i) {
+    assert(i >= 0 && i < 12);  // There are only 12 pieces
+    return i < 6 ? Piece(i + 1) : Piece(i + 3);
+}
+
+constexpr inline size_t pc_as_index(Piece p) {
+    return color_of(p) == WHITE ? p - 1 : p - 3;
+}
+
+constexpr inline char pc_as_char(Piece p) {
+    return PieceChars[pc_as_index(p)];
 }
 
 constexpr Piece pc_from_char(char c) {
