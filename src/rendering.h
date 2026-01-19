@@ -19,8 +19,8 @@ constexpr SDL_Color BLACK = {0, 0, 0, 255};
 constexpr SDL_Color WHITE = {255, 255, 255, 255};
 
 extern std::array<SDL_Texture*, 12> PieceTextures;
-extern std::array<SDL_Texture*, 8> RankLabels;
-extern std::array<std::array<SDL_Texture*, 8>, 2> FileLabels;
+extern std::array<SDL_Texture*, RANK_NB> RankLabels;
+extern std::array<std::array<SDL_Texture*, FILE_NB>, COLOR_NB> FileLabels;
 extern TTF_Font* GoogleSans;
 
 SDL_Texture* load_texture(SDL_Renderer* renderer, const std::string& path);
@@ -50,4 +50,16 @@ void draw_board(SDL_Renderer* renderer,
                 std::array<Piece, 64> board,
                 const SDL_Point& topLeft,
                 int size,
-                const Color& perspective = WHITE);
+                Color perspective = WHITE);
+
+enum class DrawDirection {
+    Horizontal,
+    Vertical,
+};
+
+/// Draws a piece selector for promotion moves, can draw horizontally and vertically.
+void draw_piece_selector(SDL_Renderer* renderer,
+                         const SDL_Point& topLeft,
+                         int sqSize,
+                         Color pieceColor,
+                         DrawDirection direction = DrawDirection::Horizontal);

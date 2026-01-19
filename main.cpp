@@ -19,15 +19,12 @@
 #include "src/pretty.h"
 #include "src/types.h"
 
-void cli_game_loop(Position& pos);
-void gui_game_loop(const ChessModel& model, ChessController& controller, ChessView& view);
-
 constexpr size_t window_size = 640;
 
 int init_SDL(SDL_Window** window, SDL_Renderer** renderer) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "Something went wrong initializing SDL\n";
-        return 1;
+        return EXIT_FAILURE;
     }
 
     *window = SDL_CreateWindow("Chess 2.0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -35,16 +32,16 @@ int init_SDL(SDL_Window** window, SDL_Renderer** renderer) {
 
     if (!window) {
         std::cerr << "Error creating SDL window" << SDL_GetError() << "\n";
-        return 1;
+        return EXIT_FAILURE;
     }
 
     *renderer = SDL_CreateRenderer(*window, -1, 0);
     if (!renderer) {
         std::cout << stderr << "Error creating SDL Renderer\n";
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char* argv[]) {
@@ -52,29 +49,5 @@ int main(int argc, char* argv[]) {
 
     ChessGUI().loop();
 
-    return 0;
-}
-
-void cli_game_loop(Position& pos) {
-    while (true) {
-        std::cout << "Blockers for king: \n"
-                  << pretty(pos.blockers_for_king(pos.side_to_move())) << "\n";
-
-        std::cout << "side to move: " << (pos.side_to_move() == WHITE ? "white" : "black") << "\n";
-        std::cout << pos << "\n";
-
-        auto legalMoves = MoveList<LEGAL>(pos);
-        int count = 0;
-        for (auto m : legalMoves) {
-            std::cout << ++count << ") " << m << "\n";
-        }
-
-        std::cout << "Choose a move: \n";
-        size_t move_num{0};
-        std::cin >> move_num;
-        Move m = legalMoves[move_num - 1];
-        std::cout << "your choose: " << m << "\n";
-
-        pos.make_move(m);
-    }
+    return EXIT_SUCCESS;
 }

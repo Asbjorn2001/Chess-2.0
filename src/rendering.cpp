@@ -93,7 +93,7 @@ void draw_board(SDL_Renderer* renderer,
                 std::array<Piece, 64> board,
                 const SDL_Point& topLeft,
                 int size,
-                const Color& perspective) {
+                Color perspective) {
     int squareSize = size / 8;
     int fourthSS = squareSize / 4;
     for (Square s = SQ_A1; s < SQUARE_NB; ++s) {
@@ -116,5 +116,24 @@ void draw_board(SDL_Renderer* renderer,
         // Draw piece if any
         if (Piece p = board[s]; p != NO_PIECE)
             draw_piece(renderer, p, dstSquare);
+    }
+}
+
+void draw_piece_selector(SDL_Renderer* renderer,
+                         const SDL_Point& topLeft,
+                         int sqSize,
+                         Color pieceColor,
+                         DrawDirection direction) {
+    Piece p = make_piece(pieceColor, KNIGHT);
+    for (auto i{0}; i < 4; ++i) {
+        int step = sqSize * i;
+        int x = topLeft.x;
+        int y = topLeft.y;
+
+        direction == DrawDirection::Horizontal ? x += step : y += step;
+
+        draw_piece(renderer, p, {x, y, sqSize, sqSize});
+
+        p = Piece(p + 1);
     }
 }
