@@ -4,6 +4,7 @@
 #include <array>
 #include <optional>
 #include <utility>
+#include <vector>
 #include "movegen.h"
 #include "position.h"
 #include "rendering.h"
@@ -20,8 +21,8 @@ struct Selected {
 
 class PromotionSelector {
    public:
-    PromotionSelector(SDL_Point topLeft, int width, Square from, Square to)
-        : topLeft(topLeft), width(width) {
+    PromotionSelector(SDL_Point topLeft, int sqSize, Square from, Square to)
+        : topLeft(topLeft), sqSize(sqSize) {
         moves = {Move::make<PROMOTION>(from, to, KNIGHT), Move::make<PROMOTION>(from, to, BISHOP),
                  Move::make<PROMOTION>(from, to, ROOK), Move::make<PROMOTION>(from, to, QUEEN)};
     }
@@ -30,7 +31,7 @@ class PromotionSelector {
     Move move_on(int x, int y);
 
     SDL_Point topLeft;
-    int width;
+    int sqSize;
 
    private:
     std::array<Move, 4> moves;
@@ -45,6 +46,8 @@ class Board {
     bool contains(int x, int y);
     /// Returns the square on the given coordinates.
     Square square_on(int x, int y, Color perspective);
+    /// Returns the top left corner of the given square.
+    SDL_Point corner_of(Square s, Color perspective);
 
     SDL_Point topLeft;
     int size;
@@ -76,6 +79,9 @@ class ChessGUI {
     void unselect();
     void open_selector(Square from, Square to);
     void close_selector();
+
+    /// Returns the legal squares to move to from the given square.
+    std::vector<Square> legal_squares_from(Square from) const;
 
     void update();
     void render();

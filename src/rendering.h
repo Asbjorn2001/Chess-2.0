@@ -13,10 +13,12 @@ constexpr SDL_Color TRANSPARENT = {0, 0, 0, 0};
 constexpr SDL_Color RED = {255, 0, 0, 255};
 constexpr SDL_Color GREEN = {0, 255, 0, 255};
 constexpr SDL_Color BLUE = {0, 0, 255, 255};
+constexpr SDL_Color DARK_BROWN = {37, 20, 20};
 constexpr SDL_Color DARK = {80, 55, 35, 255};
 constexpr SDL_Color LIGHT = {190, 150, 120, 255};
 constexpr SDL_Color BLACK = {0, 0, 0, 255};
 constexpr SDL_Color WHITE = {255, 255, 255, 255};
+constexpr SDL_Color TRANSBLUE = {100, 100, 255, 100};
 
 extern std::array<SDL_Texture*, 12> PieceTextures;
 extern std::array<SDL_Texture*, RANK_NB> RankLabels;
