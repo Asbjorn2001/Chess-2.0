@@ -5,6 +5,7 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <optional>
 #include <ranges>
@@ -79,40 +80,34 @@ void ChessGUI::render() {
 
     // Draw optionally selected piece
     if (selected.has_value() && selected->stick) {
-        int sqSize = board.squareSize;
+        int sqSize = board.sqSize;
         int halfSqSize = sqSize / 2;
         draw_piece(renderer, selected->piece,
                    {mouseX - halfSqSize, mouseY - halfSqSize, sqSize, sqSize});
     }
 
-    // draw_piece_selector(renderer, {300, 300}, 50, WHITE);
+    if (promotionSelector.has_value())
+        draw_piece_selector(renderer, promotionSelector->topLeft, promotionSelector->width,
+                            position.side_to_move(), DrawDirection::Vertical);
 
     SDL_RenderPresent(renderer);
-}
-
-bool Board::contains(int x, int y) {
-    return x > topLeft.x && x < topLeft.x + size && y > topLeft.y && y < topLeft.y + size;
-}
-
-Square Board::square_on(int x, int y, Color perspective) {
-    assert(contains(x, y));
-    Rank r = Rank(7 - (y - topLeft.y) / squareSize);
-    File f = File((x - topLeft.x) / squareSize);
-    return make_square(f, relative_rank(perspective, r));
 }
 
 void ChessGUI::handle_press(SDL_MouseButtonEvent e) {
     if (e.button != SDL_BUTTON_LEFT)
         return;
 
-    if (!board.contains(e.x, e.y)) {
-        unselect();
-        return;
+    if (promotionSelector.has_value()) {
+        if (promotionSelector->contains(e.x, e.y))
+            position.make_move(promotionSelector->move_on(e.x, e.y));
+        close_selector();
     }
 
-    if (Square s = board.square_on(e.x, e.y, perspective);
-        selected.has_value() && selected->square != s) {
-        try_move(selected->square, s);
+    if (!board.contains(e.x, e.y)) {
+        unselect();
+    } else if (Square s = board.square_on(e.x, e.y, perspective);
+               selected.has_value() && selected->square != s) {
+        try_move({selected->square, s});
         unselect();
     } else if (!position.is_empty(s)) {
         select(s);
@@ -130,7 +125,7 @@ void ChessGUI::handle_release(SDL_MouseButtonEvent e) {
 
     if (selected.has_value()) {
         if (Square s = board.square_on(e.x, e.y, perspective); s != selected->square) {
-            try_move(selected->square, s);
+            try_move({selected->square, s});
             unselect();
         } else {
             selected->stick = false;
@@ -143,14 +138,31 @@ void ChessGUI::handle_motion(SDL_MouseMotionEvent e) {
     mouseY = e.y;
 }
 
-bool ChessGUI::try_move(Square from, Square to) {
+bool ChessGUI::try_move(Move move) {
+    Square from = move.from_sq();
+    Square to = move.to_sq();
+    auto legalMoves = MoveList<LEGAL>(position);
+
+    // Early exit on promotion selections.
+    if (move.type_of() == PROMOTION && legalMoves.contains(move)) {
+        position.make_move(move);
+        return true;
+    }
+
     std::vector<Move> moves;
-    std::ranges::copy_if(MoveList<LEGAL>(position), std::back_inserter(moves),
+    std::ranges::copy_if(legalMoves, std::back_inserter(moves),
                          [&](const Move& m) { return m.from_sq() == from && m.to_sq() == to; });
 
+    // En passant, castling and normal moves.
     if (moves.size() == 1) {
         position.make_move(moves.front());
         return true;
+    }
+
+    // Move must be a promotion move, open the selector.
+    if (moves.size() > 1) {
+        assert(moves.size() == 4);
+        open_selector(from, to);
     }
 
     return false;
@@ -162,4 +174,33 @@ void ChessGUI::select(Square s) {
 
 void ChessGUI::unselect() {
     selected = std::nullopt;
+}
+
+void ChessGUI::open_selector(Square from, Square to) {
+    promotionSelector = PromotionSelector(
+        {board.topLeft.x + board.size, board.topLeft.y + board.sqSize * 2}, board.sqSize, from, to);
+}
+
+void ChessGUI::close_selector() {
+    promotionSelector = std::nullopt;
+}
+
+bool Board::contains(int x, int y) {
+    return x > topLeft.x && x < topLeft.x + size && y > topLeft.y && y < topLeft.y + size;
+}
+
+Square Board::square_on(int x, int y, Color perspective) {
+    assert(contains(x, y));
+    Rank r = Rank(7 - (y - topLeft.y) / sqSize);
+    File f = File((x - topLeft.x) / sqSize);
+    return make_square(f, relative_rank(perspective, r));
+}
+
+bool PromotionSelector::contains(int x, int y) {
+    return x > topLeft.x && x < topLeft.x + width && y > topLeft.y && y < topLeft.y + 4 * width;
+}
+
+Move PromotionSelector::move_on(int x, int y) {
+    assert(contains(x, y));
+    return moves[(y - topLeft.y) / width];
 }

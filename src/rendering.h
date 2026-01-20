@@ -62,4 +62,4 @@ void draw_piece_selector(SDL_Renderer* renderer,
                          const SDL_Point& topLeft,
                          int sqSize,
                          Color pieceColor,
-                         DrawDirection direction = DrawDirection::Horizontal);
+                         DrawDirection direction = DrawDirection::Vertical);

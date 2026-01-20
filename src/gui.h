@@ -18,9 +18,27 @@ struct Selected {
     bool stick = true;
 };
 
+class PromotionSelector {
+   public:
+    PromotionSelector(SDL_Point topLeft, int width, Square from, Square to)
+        : topLeft(topLeft), width(width) {
+        moves = {Move::make<PROMOTION>(from, to, KNIGHT), Move::make<PROMOTION>(from, to, BISHOP),
+                 Move::make<PROMOTION>(from, to, ROOK), Move::make<PROMOTION>(from, to, QUEEN)};
+    }
+
+    bool contains(int x, int y);
+    Move move_on(int x, int y);
+
+    SDL_Point topLeft;
+    int width;
+
+   private:
+    std::array<Move, 4> moves;
+};
+
 class Board {
    public:
-    Board(SDL_Point topLeft, int size) : topLeft(topLeft), size(size), squareSize(size / 8) {}
+    Board(SDL_Point topLeft, int size) : topLeft(topLeft), size(size), sqSize(size / 8) {}
 
     /// Returns if the board contains the given coordinates. Calling this function with coordinates
     /// not contained by the board yields undefined behaviour.
@@ -30,7 +48,7 @@ class Board {
 
     SDL_Point topLeft;
     int size;
-    int squareSize;
+    int sqSize;
 };
 
 class ChessGUI {
@@ -53,20 +71,23 @@ class ChessGUI {
 
     /// Checks if the move is legal, before making the move on the position.
     /// Returns true if the move was made.
-
-    bool try_move(Square from, Square to);
+    bool try_move(Move m);
     void select(Square s);
     void unselect();
+    void open_selector(Square from, Square to);
+    void close_selector();
 
     void update();
     void render();
 
     bool isRunning = true;
     int mouseX, mouseY;
+
     Board board;
     Position position{};
     Color perspective = WHITE;
     std::optional<Selected> selected = std::nullopt;
+    std::optional<PromotionSelector> promotionSelector = std::nullopt;
 
     SDL_Window* window;
     SDL_Renderer* renderer;
