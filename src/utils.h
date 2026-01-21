@@ -1,5 +1,6 @@
+#pragma once
+
 #include <string>
 #include <vector>
 
-std::vector<std::string> split_string(std::string s,
-                                      const std::string& delimiter);
+std::vector<std::string> split_string(std::string s, const std::string& delimiter);

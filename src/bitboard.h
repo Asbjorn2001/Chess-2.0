@@ -8,7 +8,6 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <iostream>
 #include "types.h"
 
 namespace Bitboards {

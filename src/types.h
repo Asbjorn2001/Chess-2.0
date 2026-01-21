@@ -1,13 +1,10 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
-#include "macros.h"
 
 using Bitboard = uint64_t;
 using Key = uint_fast64_t;

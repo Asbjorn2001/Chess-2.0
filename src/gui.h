@@ -1,11 +1,11 @@
+#pragma once
+
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <array>
 #include <optional>
-#include <utility>
 #include <vector>
-#include "movegen.h"
 #include "position.h"
 #include "rendering.h"
 #include "types.h"
@@ -34,7 +34,7 @@ class PromotionSelector {
     int sqSize;
 
    private:
-    std::array<Move, 4> moves;
+    std::array<Move, 4> moves{};
 };
 
 class Board {
@@ -87,7 +87,7 @@ class ChessGUI {
     void render();
 
     bool isRunning = true;
-    int mouseX, mouseY;
+    int mouseX = 0, mouseY = 0;
 
     Board board;
     Position position{};
